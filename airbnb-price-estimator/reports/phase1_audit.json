@@ -1,0 +1,464 @@
+{
+  "n_rows": 5555,
+  "n_cols": 43,
+  "money_types": [
+    {
+      "column": "price",
+      "dtype": "Int64"
+    },
+    {
+      "column": "security_deposit",
+      "dtype": "Float64"
+    },
+    {
+      "column": "cleaning_fee",
+      "dtype": "Float64"
+    },
+    {
+      "column": "extra_people",
+      "dtype": "Int64"
+    },
+    {
+      "column": "weekly_price",
+      "dtype": "Float64"
+    },
+    {
+      "column": "monthly_price",
+      "dtype": "Float64"
+    }
+  ],
+  "markets": [
+    {
+      "country": "Turkey",
+      "market": "Istanbul",
+      "rows": 660,
+      "median_local": 179.0,
+      "median_usd": 31.53
+    },
+    {
+      "country": "Canada",
+      "market": "Montreal",
+      "rows": 648,
+      "median_local": 75.0,
+      "median_usd": 56.52
+    },
+    {
+      "country": "Spain",
+      "market": "Barcelona",
+      "rows": 632,
+      "median_local": 60.0,
+      "median_usd": 67.17
+    },
+    {
+      "country": "Australia",
+      "market": "Sydney",
+      "rows": 609,
+      "median_local": 132.0,
+      "median_usd": 91.77
+    },
+    {
+      "country": "United States",
+      "market": "New York",
+      "rows": 607,
+      "median_local": 110.0,
+      "median_usd": 110.0
+    },
+    {
+      "country": "Brazil",
+      "market": "Rio De Janeiro",
+      "rows": 603,
+      "median_local": 257.0,
+      "median_usd": 65.16
+    },
+    {
+      "country": "Hong Kong",
+      "market": "Hong Kong",
+      "rows": 600,
+      "median_local": 561.0,
+      "median_usd": 71.6
+    },
+    {
+      "country": "Portugal",
+      "market": "Porto",
+      "rows": 554,
+      "median_local": 59.0,
+      "median_usd": 66.05
+    },
+    {
+      "country": "United States",
+      "market": "Oahu",
+      "rows": 253,
+      "median_local": 142.0,
+      "median_usd": 142.0
+    },
+    {
+      "country": "United States",
+      "market": "Maui",
+      "rows": 153,
+      "median_local": 228.0,
+      "median_usd": 228.0
+    },
+    {
+      "country": "United States",
+      "market": "The Big Island",
+      "rows": 139,
+      "median_local": 120.0,
+      "median_usd": 120.0
+    },
+    {
+      "country": "United States",
+      "market": "Kauai",
+      "rows": 67,
+      "median_local": 239.0,
+      "median_usd": 239.0
+    },
+    {
+      "country": "China",
+      "market": "Hong Kong",
+      "rows": 19,
+      "median_local": 393.0,
+      "median_usd": 50.16
+    },
+    {
+      "country": "United States",
+      "market": "",
+      "rows": 2,
+      "median_local": 137.0,
+      "median_usd": 137.0
+    },
+    {
+      "country": "Brazil",
+      "market": "Other (International)",
+      "rows": 2,
+      "median_local": 591.5,
+      "median_usd": 149.97
+    },
+    {
+      "country": "Spain",
+      "market": "",
+      "rows": 1,
+      "median_local": 24.0,
+      "median_usd": 26.87
+    },
+    {
+      "country": "Australia",
+      "market": "",
+      "rows": 1,
+      "median_local": 254.0,
+      "median_usd": 176.59
+    },
+    {
+      "country": "Canada",
+      "market": "",
+      "rows": 1,
+      "median_local": 25.0,
+      "median_usd": 18.84
+    },
+    {
+      "country": "Brazil",
+      "market": "",
+      "rows": 1,
+      "median_local": 116.0,
+      "median_usd": 29.41
+    },
+    {
+      "country": "United States",
+      "market": "Other (Domestic)",
+      "rows": 1,
+      "median_local": 128.0,
+      "median_usd": 128.0
+    },
+    {
+      "country": "Turkey",
+      "market": "Other (International)",
+      "rows": 1,
+      "median_local": 501.0,
+      "median_usd": 88.26
+    },
+    {
+      "country": "Portugal",
+      "market": "Other (International)",
+      "rows": 1,
+      "median_local": 99.0,
+      "median_usd": 110.83
+    }
+  ],
+  "recommended_market": "all",
+  "url_check": {
+    "tested": 50,
+    "failed": 10,
+    "fail_rate": 0.2,
+    "use_provided_image_embeddings": false
+  },
+  "price_stats": [
+    {
+      "statistic": "count",
+      "value": 5555.0
+    },
+    {
+      "statistic": "null_count",
+      "value": 0.0
+    },
+    {
+      "statistic": "mean",
+      "value": 278.76615661566154
+    },
+    {
+      "statistic": "std",
+      "value": 842.2155309556474
+    },
+    {
+      "statistic": "min",
+      "value": 9.0
+    },
+    {
+      "statistic": "1%",
+      "value": 18.0
+    },
+    {
+      "statistic": "5%",
+      "value": 31.0
+    },
+    {
+      "statistic": "25%",
+      "value": 70.0
+    },
+    {
+      "statistic": "50%",
+      "value": 129.0
+    },
+    {
+      "statistic": "75%",
+      "value": 280.0
+    },
+    {
+      "statistic": "95%",
+      "value": 903.0
+    },
+    {
+      "statistic": "99%",
+      "value": 2002.0
+    },
+    {
+      "statistic": "max",
+      "value": 48842.0
+    }
+  ],
+  "missing": [
+    {
+      "column": "monthly_price",
+      "missing": 4899,
+      "pct": 88.2
+    },
+    {
+      "column": "weekly_price",
+      "missing": 4841,
+      "pct": 87.1
+    },
+    {
+      "column": "security_deposit",
+      "missing": 2084,
+      "pct": 37.5
+    },
+    {
+      "column": "cleaning_fee",
+      "missing": 1531,
+      "pct": 27.6
+    },
+    {
+      "column": "first_review",
+      "missing": 1388,
+      "pct": 25.0
+    },
+    {
+      "column": "last_review",
+      "missing": 1388,
+      "pct": 25.0
+    },
+    {
+      "column": "image_embeddings",
+      "missing": 924,
+      "pct": 16.6
+    },
+    {
+      "column": "beds",
+      "missing": 13,
+      "pct": 0.2
+    },
+    {
+      "column": "bathrooms",
+      "missing": 10,
+      "pct": 0.2
+    },
+    {
+      "column": "bedrooms",
+      "missing": 5,
+      "pct": 0.1
+    },
+    {
+      "column": "_id",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "listing_url",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "name",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "summary",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "space",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "description",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "neighborhood_overview",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "notes",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "transit",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "access",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "interaction",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "house_rules",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "property_type",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "room_type",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "bed_type",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "minimum_nights",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "maximum_nights",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "cancellation_policy",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "last_scraped",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "calendar_last_scraped",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "accommodates",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "number_of_reviews",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "amenities",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "price",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "extra_people",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "guests_included",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "images",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "host",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "address",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "availability",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "review_scores",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "reviews",
+      "missing": 0,
+      "pct": 0.0
+    },
+    {
+      "column": "text_embeddings",
+      "missing": 0,
+      "pct": 0.0
+    }
+  ]
+}

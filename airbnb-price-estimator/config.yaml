@@ -1,0 +1,72 @@
+# All settings in one place. Scripts read this file; nothing is hard-coded.
+seed: 42
+
+paths:
+  raw: data/raw/airbnb.parquet # cached copy of the Hugging Face dataset
+  processed: data/processed/listings.parquet
+  reports: reports
+
+data:
+  # https://huggingface.co/datasets/MongoDB/airbnb_embeddings  (5,555 rows, Apache-2.0)
+  # Note the underscore: "airbnb_embeddings", not "airbnb-embeddings".
+  hf_dataset: MongoDB/airbnb_embeddings
+  # Decided after the audit: no market has 1,000 rows (largest: Istanbul, 660),
+  # so all markets are pooled and every price is converted to USD.
+  market: all
+  min_market_rows: 1000 # rule used to recommend a single market
+  min_price: 1.0 # rows with missing or lower price are dropped
+
+# Prices are in local currency. Each listing's country gives its currency;
+# price_usd = local price / units_per_usd.
+currency:
+  by_country:
+    United States: USD
+    Canada: CAD
+    Spain: EUR
+    Portugal: EUR
+    Australia: AUD
+    Brazil: BRL
+    Turkey: TRY
+    Hong Kong: HKD
+    China: HKD # the 19 "China" rows are all in the Hong Kong market
+  # 2019 annual averages, local currency units per 1 USD.
+  # Federal Reserve G.5A (2020-01-02): CAD 1.3269, BRL 3.9440, HKD 7.8351,
+  #   EUR = 1 / 1.1194 USD per EUR, AUD = 1 / 0.6952 USD per AUD.
+  # Turkey (not in G.5A): FRED series CCUSMA02TRA618N, 2019 = 5.6765.
+  units_per_usd:
+    USD: 1.0
+    CAD: 1.3269
+    EUR: 0.8933
+    AUD: 1.4384
+    BRL: 3.9440
+    TRY: 5.6765
+    HKD: 7.8351
+
+checks:
+  url_sample: 50
+  url_timeout_s: 8
+  url_fail_threshold: 0.20 # above this, use the provided image_embeddings
+  text_emb_dim: 1536
+  image_emb_dim: 512
+
+features:
+  top_k_amenities: 30
+  text_fields: [name, summary, description]
+  leakage_columns: # tied to the price or identifiers -> removed
+    - weekly_price
+    - monthly_price
+    - cleaning_fee
+    - security_deposit
+    - extra_people
+    - availability
+    - reviews
+    - listing_url
+    - calendar_last_scraped
+
+cv:
+  n_folds: 5
+  n_price_bins: 10 # stratify folds on price deciles
+
+outliers: # applied inside each training fold (Phase 3+)
+  lower_quantile: 0.01
+  upper_quantile: 0.99

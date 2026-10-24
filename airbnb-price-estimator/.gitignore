@@ -1,0 +1,25 @@
+# Data, runs and model files are rebuilt by the pipeline, never committed
+data/
+mlruns/
+models/
+*.parquet
+*.pt
+
+# Python
+__pycache__/
+.venv/
+
+# Virtual environment created in the project folder itself (Windows layout)
+Lib/
+Scripts/
+Include/
+share/
+pyvenv.cfg
+.pytest_cache/
+.ruff_cache/
+
+# Editors / OS / secrets
+.vscode/
+.idea/
+.DS_Store
+.env
