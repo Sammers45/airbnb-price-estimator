@@ -8,8 +8,8 @@ Predicts an Airbnb listing's nightly price from its structured fields, descripti
 
 | Phase | What                                                            | Files added                                   | Status        |
 | ----- | --------------------------------------------------------------- | --------------------------------------------- | ------------- |
-| 1     | Load, validate, clean, split                                    | `src/data.py`, `src/utils.py`                 | **In review** |
-| 2     | Exploratory data analysis                                       | `src/eda.py`                                  | –             |
+| 1     | Load, validate, clean, USD conversion, split                    | `src/data.py`, `src/utils.py`                 | Done          |
+| 2     | Exploratory data analysis                                       | `src/eda.py`                                  | **In review** |
 | 3     | Baseline LightGBM + MLflow                                      | `src/baseline.py`                             | –             |
 | 4     | Text model (DistilBERT)                                         | `src/text_model.py`                           | –             |
 | 5     | Image embeddings (CLIP)                                         | `src/image.py`                                | –             |
@@ -33,7 +33,8 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 pytest
 python -m src.data audit
-python -m src.data build --market "<market from the audit, or all>"
+python -m src.data build          # all markets, prices in USD
+python -m src.eda
 ```
 
 ## Project files
@@ -42,8 +43,11 @@ python -m src.data build --market "<market from the audit, or all>"
 config.yaml              all settings
 src/utils.py             config, seed, logging
 src/data.py              Phase 1 pipeline
+src/eda.py               Phase 2 EDA
 tests/test_data.py       Phase 1 tests
+tests/test_eda.py        Phase 2 tests
 docs/PHASE_1.md          Phase 1 guide
+docs/PHASE_2.md          Phase 2 guide
 docs/GIT.md              how to commit and push each phase
 .github/workflows/ci.yml lint + tests on every push
 ```

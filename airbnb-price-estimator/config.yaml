@@ -70,3 +70,8 @@ cv:
 outliers: # applied inside each training fold (Phase 3+)
   lower_quantile: 0.01
   upper_quantile: 0.99
+
+eda:
+  suspect_z: 3.5 # robust z-score of log price within market; above = review by hand
+  probe_alphas: [0.01, 0.1, 1, 10, 100, 1000] # ridge strengths tried inside each fold
+  top_n: 20 # rows shown in the suspicious-price table

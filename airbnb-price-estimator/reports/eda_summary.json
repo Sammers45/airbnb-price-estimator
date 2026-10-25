@@ -1,0 +1,1042 @@
+{
+  "target": {
+    "n": 5555,
+    "median_usd": 74.0,
+    "mean_usd": 118.47,
+    "p01_usd": 11.1,
+    "p99_usd": 783.61,
+    "max_usd": 8604.25,
+    "skew_price": 17.93,
+    "skew_log_price": 0.38
+  },
+  "suspect_z": 3.5,
+  "top_n": 20,
+  "suspicious_pct": 0.74,
+  "image": {
+    "missing_photo_price_gap_pct": 0.0
+  },
+  "text": {
+    "median_words": 206.0,
+    "p90_words": 263.0,
+    "under_10_words_pct": 2.5,
+    "over_256_words_pct": 13.9
+  },
+  "dist_centre_spearman": -0.051,
+  "tables": {
+    "suspicious": [
+      {
+        "listing_id": "20275354",
+        "market": "Istanbul",
+        "room_type": "Private room",
+        "property_type": "Apartment",
+        "accommodates": 1.0,
+        "bedrooms": 1.0,
+        "currency": "TRY",
+        "price_local": 48842.0,
+        "price": 8604.25,
+        "robust_z": 7.35
+      },
+      {
+        "listing_id": "32838748",
+        "market": "The Big Island",
+        "room_type": "Entire home/apt",
+        "property_type": "House",
+        "accommodates": 10.0,
+        "bedrooms": 5.0,
+        "currency": "USD",
+        "price_local": 3250.0,
+        "price": 3250.0,
+        "robust_z": 5.92
+      },
+      {
+        "listing_id": "17103047",
+        "market": "Montreal",
+        "room_type": "Private room",
+        "property_type": "House",
+        "accommodates": 1.0,
+        "bedrooms": 1.0,
+        "currency": "CAD",
+        "price_local": 1746.0,
+        "price": 1315.85,
+        "robust_z": 5.32
+      },
+      {
+        "listing_id": "30310595",
+        "market": "Barcelona",
+        "room_type": "Entire home/apt",
+        "property_type": "Casa particular (Cuba)",
+        "accommodates": 4.0,
+        "bedrooms": 2.0,
+        "currency": "EUR",
+        "price_local": 3000.0,
+        "price": 3358.33,
+        "robust_z": 5.21
+      },
+      {
+        "listing_id": "20692563",
+        "market": "New York",
+        "room_type": "Entire home/apt",
+        "property_type": "Townhouse",
+        "accommodates": 7.0,
+        "bedrooms": 4.0,
+        "currency": "USD",
+        "price_local": 2450.0,
+        "price": 2450.0,
+        "robust_z": 5.19
+      },
+      {
+        "listing_id": "27835298",
+        "market": "Maui",
+        "room_type": "Entire home/apt",
+        "property_type": "House",
+        "accommodates": 6.0,
+        "bedrooms": 3.0,
+        "currency": "USD",
+        "price_local": 2060.0,
+        "price": 2060.0,
+        "robust_z": 4.84
+      },
+      {
+        "listing_id": "24492886",
+        "market": "Istanbul",
+        "room_type": "Private room",
+        "property_type": "Hotel",
+        "accommodates": 2.0,
+        "bedrooms": 1.0,
+        "currency": "TRY",
+        "price_local": 7203.0,
+        "price": 1268.92,
+        "robust_z": 4.83
+      },
+      {
+        "listing_id": "4742607",
+        "market": "Porto",
+        "room_type": "Entire home/apt",
+        "property_type": "Farm stay",
+        "accommodates": 16.0,
+        "bedrooms": 9.0,
+        "currency": "EUR",
+        "price_local": 500.0,
+        "price": 559.72,
+        "robust_z": 4.77
+      },
+      {
+        "listing_id": "9917859",
+        "market": "Porto",
+        "room_type": "Entire home/apt",
+        "property_type": "Apartment",
+        "accommodates": 16.0,
+        "bedrooms": 8.0,
+        "currency": "EUR",
+        "price_local": 500.0,
+        "price": 559.72,
+        "robust_z": 4.77
+      },
+      {
+        "listing_id": "14644562",
+        "market": "Hong Kong",
+        "room_type": "Shared room",
+        "property_type": "Condominium",
+        "accommodates": 5.0,
+        "bedrooms": 1.0,
+        "currency": "HKD",
+        "price_local": 11681.0,
+        "price": 1490.86,
+        "robust_z": 4.71
+      },
+      {
+        "listing_id": "27593455",
+        "market": "Hong Kong",
+        "room_type": "Private room",
+        "property_type": "Serviced apartment",
+        "accommodates": 2.0,
+        "bedrooms": 1.0,
+        "currency": "HKD",
+        "price_local": 11681.0,
+        "price": 1490.86,
+        "robust_z": 4.71
+      },
+      {
+        "listing_id": "23921295",
+        "market": "Montreal",
+        "room_type": "Entire home/apt",
+        "property_type": "Loft",
+        "accommodates": 16.0,
+        "bedrooms": 7.0,
+        "currency": "CAD",
+        "price_local": 1200.0,
+        "price": 904.36,
+        "robust_z": 4.68
+      },
+      {
+        "listing_id": "3382961",
+        "market": "Montreal",
+        "room_type": "Entire home/apt",
+        "property_type": "Loft",
+        "accommodates": 6.0,
+        "bedrooms": 3.0,
+        "currency": "CAD",
+        "price_local": 1190.0,
+        "price": 896.83,
+        "robust_z": 4.67
+      },
+      {
+        "listing_id": "23700685",
+        "market": "Barcelona",
+        "room_type": "Private room",
+        "property_type": "Apartment",
+        "accommodates": 1.0,
+        "bedrooms": 0.0,
+        "currency": "EUR",
+        "price_local": 2000.0,
+        "price": 2238.89,
+        "robust_z": 4.66
+      },
+      {
+        "listing_id": "3920836",
+        "market": "Porto",
+        "room_type": "Entire home/apt",
+        "property_type": "Cottage",
+        "accommodates": 16.0,
+        "bedrooms": 6.0,
+        "currency": "EUR",
+        "price_local": 450.0,
+        "price": 503.75,
+        "robust_z": 4.53
+      },
+      {
+        "listing_id": "22200454",
+        "market": "Hong Kong",
+        "room_type": "Entire home/apt",
+        "property_type": "Condominium",
+        "accommodates": 5.0,
+        "bedrooms": 3.0,
+        "currency": "HKD",
+        "price_local": 10001.0,
+        "price": 1276.44,
+        "robust_z": 4.47
+      },
+      {
+        "listing_id": "30327756",
+        "market": "Hong Kong",
+        "room_type": "Private room",
+        "property_type": "Bed and breakfast",
+        "accommodates": 5.0,
+        "bedrooms": 2.0,
+        "currency": "HKD",
+        "price_local": 10001.0,
+        "price": 1276.44,
+        "robust_z": 4.47
+      },
+      {
+        "listing_id": "24857815",
+        "market": "Montreal",
+        "room_type": "Entire home/apt",
+        "property_type": "Guest suite",
+        "accommodates": 4.0,
+        "bedrooms": 2.0,
+        "currency": "CAD",
+        "price_local": 950.0,
+        "price": 715.95,
+        "robust_z": 4.29
+      },
+      {
+        "listing_id": "20955863",
+        "market": "Istanbul",
+        "room_type": "Entire home/apt",
+        "property_type": "Villa",
+        "accommodates": 14.0,
+        "bedrooms": 7.0,
+        "currency": "TRY",
+        "price_local": 4745.0,
+        "price": 835.9,
+        "robust_z": 4.28
+      },
+      {
+        "listing_id": "28045781",
+        "market": "Istanbul",
+        "room_type": "Private room",
+        "property_type": "Apartment",
+        "accommodates": 16.0,
+        "bedrooms": 7.0,
+        "currency": "TRY",
+        "price_local": 4761.0,
+        "price": 838.72,
+        "robust_z": 4.28
+      },
+      {
+        "listing_id": "29147263",
+        "market": "Barcelona",
+        "room_type": "Entire home/apt",
+        "property_type": "Serviced apartment",
+        "accommodates": 8.0,
+        "bedrooms": 5.0,
+        "currency": "EUR",
+        "price_local": 1240.0,
+        "price": 1388.11,
+        "robust_z": 4.03
+      },
+      {
+        "listing_id": "16191353",
+        "market": "The Big Island",
+        "room_type": "Entire home/apt",
+        "property_type": "House",
+        "accommodates": 8.0,
+        "bedrooms": 4.0,
+        "currency": "USD",
+        "price_local": 1100.0,
+        "price": 1100.0,
+        "robust_z": 3.97
+      },
+      {
+        "listing_id": "22123688",
+        "market": "Sydney",
+        "room_type": "Entire home/apt",
+        "property_type": "Villa",
+        "accommodates": 8.0,
+        "bedrooms": 4.0,
+        "currency": "AUD",
+        "price_local": 2356.0,
+        "price": 1637.93,
+        "robust_z": 3.92
+      },
+      {
+        "listing_id": "6147746",
+        "market": "Hong Kong",
+        "room_type": "Entire home/apt",
+        "property_type": "House",
+        "accommodates": 4.0,
+        "bedrooms": 2.0,
+        "currency": "HKD",
+        "price_local": 7002.0,
+        "price": 893.67,
+        "robust_z": 3.92
+      },
+      {
+        "listing_id": "13997910",
+        "market": "Rio De Janeiro",
+        "room_type": "Entire home/apt",
+        "property_type": "Apartment",
+        "accommodates": 8.0,
+        "bedrooms": 4.0,
+        "currency": "BRL",
+        "price_local": 11190.0,
+        "price": 2837.22,
+        "robust_z": 3.85
+      },
+      {
+        "listing_id": "27265740",
+        "market": "Other (International)",
+        "room_type": "Private room",
+        "property_type": "Bed and breakfast",
+        "accommodates": 3.0,
+        "bedrooms": 1.0,
+        "currency": "BRL",
+        "price_local": 791.0,
+        "price": 200.56,
+        "robust_z": 3.85
+      },
+      {
+        "listing_id": "20958766",
+        "market": "Porto",
+        "room_type": "Entire home/apt",
+        "property_type": "Townhouse",
+        "accommodates": 16.0,
+        "bedrooms": 10.0,
+        "currency": "EUR",
+        "price_local": 320.0,
+        "price": 358.22,
+        "robust_z": 3.77
+      },
+      {
+        "listing_id": "721473",
+        "market": "Barcelona",
+        "room_type": "Entire home/apt",
+        "property_type": "Condominium",
+        "accommodates": 4.0,
+        "bedrooms": 2.0,
+        "currency": "EUR",
+        "price_local": 999.0,
+        "price": 1118.33,
+        "robust_z": 3.74
+      },
+      {
+        "listing_id": "15591661",
+        "market": "Sydney",
+        "room_type": "Entire home/apt",
+        "property_type": "House",
+        "accommodates": 5.0,
+        "bedrooms": 3.0,
+        "currency": "AUD",
+        "price_local": 2000.0,
+        "price": 1390.43,
+        "robust_z": 3.7
+      },
+      {
+        "listing_id": "1146653",
+        "market": "New York",
+        "room_type": "Entire home/apt",
+        "property_type": "Condominium",
+        "accommodates": 3.0,
+        "bedrooms": 1.0,
+        "currency": "USD",
+        "price_local": 1000.0,
+        "price": 1000.0,
+        "robust_z": 3.69
+      }
+    ],
+    "by_market": [
+      {
+        "market": "Istanbul",
+        "rows": 660,
+        "median_usd": 31.5,
+        "q25_usd": 18.5,
+        "q75_usd": 53.0
+      },
+      {
+        "market": "Montreal",
+        "rows": 648,
+        "median_usd": 56.5,
+        "q25_usd": 36.2,
+        "q75_usd": 82.9
+      },
+      {
+        "market": "Barcelona",
+        "rows": 632,
+        "median_usd": 67.2,
+        "q25_usd": 39.2,
+        "q75_usd": 111.9
+      },
+      {
+        "market": "Hong Kong",
+        "rows": 619,
+        "median_usd": 70.2,
+        "q25_usd": 45.1,
+        "q75_usd": 108.2
+      },
+      {
+        "market": "Sydney",
+        "rows": 609,
+        "median_usd": 91.8,
+        "q25_usd": 55.6,
+        "q75_usd": 151.6
+      },
+      {
+        "market": "New York",
+        "rows": 607,
+        "median_usd": 110.0,
+        "q25_usd": 72.0,
+        "q75_usd": 160.0
+      },
+      {
+        "market": "Rio De Janeiro",
+        "rows": 603,
+        "median_usd": 65.2,
+        "q25_usd": 37.8,
+        "q75_usd": 133.4
+      },
+      {
+        "market": "Porto",
+        "rows": 554,
+        "median_usd": 66.0,
+        "q25_usd": 45.9,
+        "q75_usd": 89.6
+      },
+      {
+        "market": "Oahu",
+        "rows": 253,
+        "median_usd": 142.0,
+        "q25_usd": 97.0,
+        "q75_usd": 265.0
+      },
+      {
+        "market": "Maui",
+        "rows": 153,
+        "median_usd": 228.0,
+        "q25_usd": 174.0,
+        "q75_usd": 320.0
+      },
+      {
+        "market": "The Big Island",
+        "rows": 139,
+        "median_usd": 120.0,
+        "q25_usd": 84.0,
+        "q75_usd": 179.0
+      },
+      {
+        "market": "Kauai",
+        "rows": 67,
+        "median_usd": 239.0,
+        "q25_usd": 139.0,
+        "q75_usd": 400.0
+      },
+      {
+        "market": "",
+        "rows": 6,
+        "median_usd": 77.2,
+        "q25_usd": 26.9,
+        "q75_usd": 149.0
+      },
+      {
+        "market": "Other (International)",
+        "rows": 4,
+        "median_usd": 105.1,
+        "q25_usd": 99.4,
+        "q75_usd": 110.8
+      },
+      {
+        "market": "Other (Domestic)",
+        "rows": 1,
+        "median_usd": 128.0,
+        "q25_usd": 128.0,
+        "q75_usd": 128.0
+      }
+    ],
+    "by_room": [
+      {
+        "room_type": "Entire home/apt",
+        "rows": 3489,
+        "median_usd": 100.0,
+        "q25_usd": 63.2,
+        "q75_usd": 166.8
+      },
+      {
+        "room_type": "Private room",
+        "rows": 1983,
+        "median_usd": 44.8,
+        "q25_usd": 28.0,
+        "q75_usd": 69.5
+      },
+      {
+        "room_type": "Shared room",
+        "rows": 83,
+        "median_usd": 27.1,
+        "q25_usd": 17.6,
+        "q75_usd": 43.7
+      }
+    ],
+    "by_property": [
+      {
+        "property_type": "Apartment",
+        "rows": 3626,
+        "median_usd": 67.8,
+        "q25_usd": 40.3,
+        "q75_usd": 111.9
+      },
+      {
+        "property_type": "House",
+        "rows": 606,
+        "median_usd": 92.8,
+        "q25_usd": 45.0,
+        "q75_usd": 238.0
+      },
+      {
+        "property_type": "Condominium",
+        "rows": 399,
+        "median_usd": 140.0,
+        "q25_usd": 74.6,
+        "q75_usd": 230.0
+      },
+      {
+        "property_type": "Serviced apartment",
+        "rows": 185,
+        "median_usd": 67.2,
+        "q25_usd": 37.2,
+        "q75_usd": 139.0
+      },
+      {
+        "property_type": "Loft",
+        "rows": 142,
+        "median_usd": 71.4,
+        "q25_usd": 46.5,
+        "q75_usd": 115.0
+      },
+      {
+        "property_type": "Townhouse",
+        "rows": 108,
+        "median_usd": 84.5,
+        "q25_usd": 48.7,
+        "q75_usd": 159.0
+      },
+      {
+        "property_type": "Guest suite",
+        "rows": 81,
+        "median_usd": 82.7,
+        "q25_usd": 54.9,
+        "q75_usd": 130.0
+      },
+      {
+        "property_type": "Bed and breakfast",
+        "rows": 69,
+        "median_usd": 54.8,
+        "q25_usd": 31.5,
+        "q75_usd": 107.1
+      },
+      {
+        "property_type": "Boutique hotel",
+        "rows": 53,
+        "median_usd": 53.0,
+        "q25_usd": 30.7,
+        "q75_usd": 97.1
+      },
+      {
+        "property_type": "Guesthouse",
+        "rows": 50,
+        "median_usd": 69.5,
+        "q25_usd": 38.0,
+        "q75_usd": 115.4
+      }
+    ],
+    "spearman": [
+      {
+        "feature": "accommodates",
+        "spearman": 0.567,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "beds",
+        "spearman": 0.478,
+        "n": 5542,
+        "missing_pct": 0.2
+      },
+      {
+        "feature": "bedrooms",
+        "spearman": 0.441,
+        "n": 5550,
+        "missing_pct": 0.1
+      },
+      {
+        "feature": "bathrooms",
+        "spearman": 0.305,
+        "n": 5545,
+        "missing_pct": 0.2
+      },
+      {
+        "feature": "guests_included",
+        "spearman": 0.259,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "amenities_count",
+        "spearman": 0.155,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "rs_location",
+        "spearman": 0.112,
+        "n": 4081,
+        "missing_pct": 26.5
+      },
+      {
+        "feature": "minimum_nights",
+        "spearman": 0.098,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "host_listings_count",
+        "spearman": 0.08,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "number_of_reviews",
+        "spearman": -0.074,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "rs_value",
+        "spearman": -0.071,
+        "n": 4080,
+        "missing_pct": 26.6
+      },
+      {
+        "feature": "days_since_first_review",
+        "spearman": 0.055,
+        "n": 4167,
+        "missing_pct": 25.0
+      },
+      {
+        "feature": "maximum_nights",
+        "spearman": 0.054,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "dist_centre_km",
+        "spearman": -0.051,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "rs_rating",
+        "spearman": 0.047,
+        "n": 4081,
+        "missing_pct": 26.5
+      },
+      {
+        "feature": "text_n_words",
+        "spearman": 0.038,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "rs_cleanliness",
+        "spearman": 0.029,
+        "n": 4082,
+        "missing_pct": 26.5
+      },
+      {
+        "feature": "days_since_last_review",
+        "spearman": 0.026,
+        "n": 4167,
+        "missing_pct": 25.0
+      },
+      {
+        "feature": "host_identity_verified",
+        "spearman": 0.017,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "host_is_superhost",
+        "spearman": -0.016,
+        "n": 5555,
+        "missing_pct": 0.0
+      },
+      {
+        "feature": "rs_checkin",
+        "spearman": -0.006,
+        "n": 4080,
+        "missing_pct": 26.6
+      },
+      {
+        "feature": "rs_communication",
+        "spearman": 0.005,
+        "n": 4081,
+        "missing_pct": 26.5
+      },
+      {
+        "feature": "rs_accuracy",
+        "spearman": -0.002,
+        "n": 4079,
+        "missing_pct": 26.6
+      }
+    ],
+    "amenities": [
+      {
+        "amenity": "tv",
+        "share_pct": 77.0,
+        "lift_pct": 60.4
+      },
+      {
+        "amenity": "air_conditioning",
+        "share_pct": 61.8,
+        "lift_pct": 39.1
+      },
+      {
+        "amenity": "family_kid_friendly",
+        "share_pct": 44.8,
+        "lift_pct": 38.9
+      },
+      {
+        "amenity": "kitchen",
+        "share_pct": 89.1,
+        "lift_pct": 26.6
+      },
+      {
+        "amenity": "lock_on_bedroom_door",
+        "share_pct": 28.8,
+        "lift_pct": -24.0
+      },
+      {
+        "amenity": "dryer",
+        "share_pct": 42.9,
+        "lift_pct": 21.9
+      },
+      {
+        "amenity": "cable_tv",
+        "share_pct": 31.2,
+        "lift_pct": 21.5
+      },
+      {
+        "amenity": "iron",
+        "share_pct": 66.5,
+        "lift_pct": 16.6
+      },
+      {
+        "amenity": "washer",
+        "share_pct": 69.8,
+        "lift_pct": 15.7
+      },
+      {
+        "amenity": "free_parking_on_premises",
+        "share_pct": 26.8,
+        "lift_pct": 15.5
+      },
+      {
+        "amenity": "heating",
+        "share_pct": 59.4,
+        "lift_pct": 15.0
+      },
+      {
+        "amenity": "elevator",
+        "share_pct": 42.2,
+        "lift_pct": 14.6
+      },
+      {
+        "amenity": "hair_dryer",
+        "share_pct": 70.2,
+        "lift_pct": 14.4
+      },
+      {
+        "amenity": "internet",
+        "share_pct": 32.7,
+        "lift_pct": 14.3
+      },
+      {
+        "amenity": "shampoo",
+        "share_pct": 66.8,
+        "lift_pct": 8.8
+      },
+      {
+        "amenity": "stove",
+        "share_pct": 27.5,
+        "lift_pct": 8.3
+      },
+      {
+        "amenity": "microwave",
+        "share_pct": 29.1,
+        "lift_pct": 7.0
+      },
+      {
+        "amenity": "laptop_friendly_workspace",
+        "share_pct": 62.0,
+        "lift_pct": 6.5
+      },
+      {
+        "amenity": "smoke_detector",
+        "share_pct": 52.0,
+        "lift_pct": 5.1
+      },
+      {
+        "amenity": "fire_extinguisher",
+        "share_pct": 39.7,
+        "lift_pct": 4.5
+      },
+      {
+        "amenity": "cooking_basics",
+        "share_pct": 29.2,
+        "lift_pct": 3.6
+      },
+      {
+        "amenity": "dishes_and_silverware",
+        "share_pct": 30.9,
+        "lift_pct": 3.4
+      },
+      {
+        "amenity": "long_term_stays_allowed",
+        "share_pct": 29.0,
+        "lift_pct": 2.9
+      },
+      {
+        "amenity": "hangers",
+        "share_pct": 76.1,
+        "lift_pct": 2.8
+      },
+      {
+        "amenity": "refrigerator",
+        "share_pct": 33.9,
+        "lift_pct": 2.1
+      },
+      {
+        "amenity": "hot_water",
+        "share_pct": 53.5,
+        "lift_pct": -0.6
+      },
+      {
+        "amenity": "wifi",
+        "share_pct": 95.5,
+        "lift_pct": 0.0
+      },
+      {
+        "amenity": "essentials",
+        "share_pct": 90.9,
+        "lift_pct": 0.0
+      },
+      {
+        "amenity": "first_aid_kit",
+        "share_pct": 32.5,
+        "lift_pct": 0.0
+      },
+      {
+        "amenity": "bed_linens",
+        "share_pct": 31.6,
+        "lift_pct": 0.0
+      }
+    ],
+    "missing": [
+      {
+        "column": "rs_accuracy",
+        "missing": 1476,
+        "pct": 26.6
+      },
+      {
+        "column": "rs_checkin",
+        "missing": 1475,
+        "pct": 26.6
+      },
+      {
+        "column": "rs_value",
+        "missing": 1475,
+        "pct": 26.6
+      },
+      {
+        "column": "rs_communication",
+        "missing": 1474,
+        "pct": 26.5
+      },
+      {
+        "column": "rs_location",
+        "missing": 1474,
+        "pct": 26.5
+      },
+      {
+        "column": "rs_rating",
+        "missing": 1474,
+        "pct": 26.5
+      },
+      {
+        "column": "rs_cleanliness",
+        "missing": 1473,
+        "pct": 26.5
+      },
+      {
+        "column": "days_since_first_review",
+        "missing": 1388,
+        "pct": 25.0
+      },
+      {
+        "column": "days_since_last_review",
+        "missing": 1388,
+        "pct": 25.0
+      },
+      {
+        "column": "beds",
+        "missing": 13,
+        "pct": 0.2
+      },
+      {
+        "column": "bathrooms",
+        "missing": 10,
+        "pct": 0.2
+      },
+      {
+        "column": "bedrooms",
+        "missing": 5,
+        "pct": 0.1
+      }
+    ],
+    "probes": [
+      {
+        "input": "market only",
+        "rows": 5555,
+        "r2_log_price": 0.254,
+        "r2_within_market": 0.0
+      },
+      {
+        "input": "text embedding",
+        "rows": 5555,
+        "r2_log_price": 0.315,
+        "r2_within_market": 0.18
+      },
+      {
+        "input": "image embedding",
+        "rows": 4631,
+        "r2_log_price": 0.267,
+        "r2_within_market": 0.166
+      }
+    ],
+    "image_by_market": [
+      {
+        "market": "Istanbul",
+        "rows": 660,
+        "with_image_pct": 84.4
+      },
+      {
+        "market": "Montreal",
+        "rows": 648,
+        "with_image_pct": 89.7
+      },
+      {
+        "market": "Barcelona",
+        "rows": 632,
+        "with_image_pct": 77.5
+      },
+      {
+        "market": "Hong Kong",
+        "rows": 619,
+        "with_image_pct": 88.2
+      },
+      {
+        "market": "Sydney",
+        "rows": 609,
+        "with_image_pct": 88.0
+      },
+      {
+        "market": "New York",
+        "rows": 607,
+        "with_image_pct": 88.3
+      },
+      {
+        "market": "Rio De Janeiro",
+        "rows": 603,
+        "with_image_pct": 86.7
+      },
+      {
+        "market": "Porto",
+        "rows": 554,
+        "with_image_pct": 75.5
+      },
+      {
+        "market": "Oahu",
+        "rows": 253,
+        "with_image_pct": 76.7
+      },
+      {
+        "market": "Maui",
+        "rows": 153,
+        "with_image_pct": 64.1
+      },
+      {
+        "market": "The Big Island",
+        "rows": 139,
+        "with_image_pct": 75.5
+      },
+      {
+        "market": "Kauai",
+        "rows": 67,
+        "with_image_pct": 58.2
+      },
+      {
+        "market": "",
+        "rows": 6,
+        "with_image_pct": 83.3
+      },
+      {
+        "market": "Other (International)",
+        "rows": 4,
+        "with_image_pct": 75.0
+      },
+      {
+        "market": "Other (Domestic)",
+        "rows": 1,
+        "with_image_pct": 0.0
+      }
+    ]
+  }
+}
