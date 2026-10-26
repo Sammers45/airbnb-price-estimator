@@ -5,6 +5,8 @@ paths:
   raw: data/raw/airbnb.parquet # cached copy of the Hugging Face dataset
   processed: data/processed/listings.parquet
   reports: reports
+  predictions: data/predictions
+  models: models
 
 data:
   # https://huggingface.co/datasets/MongoDB/airbnb_embeddings  (5,555 rows, Apache-2.0)
@@ -70,3 +72,28 @@ cv:
 outliers: # applied inside each training fold (Phase 3+)
   lower_quantile: 0.01
   upper_quantile: 0.99
+
+eda:
+  suspect_z: 3.5 # robust z-score of log price within market; above = review by hand
+  probe_alphas: [0.01, 0.1, 1, 10, 100, 1000] # ridge strengths tried inside each fold
+  top_n: 20 # rows shown in the suspicious-price table
+
+baseline:
+  params: # LightGBM, predicting log1p(price)
+    objective: regression # squared error on the log scale
+    learning_rate: 0.03
+    num_leaves: 31
+    min_data_in_leaf: 20
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 1
+    lambda_l2: 1.0
+    cat_smooth: 10
+  num_boost_round: 5000
+  early_stopping_rounds: 200
+  inner_valid_frac: 0.1 # slice of each TRAINING fold used for early stopping
+
+mlflow:
+  enabled: true
+  tracking_uri: sqlite:///mlflow.db # local database file; open with `mlflow ui`
+  experiment: airbnb-price

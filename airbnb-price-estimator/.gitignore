@@ -1,6 +1,7 @@
 # Data, runs and model files are rebuilt by the pipeline, never committed
 data/
 mlruns/
+mlflow.db
 models/
 *.parquet
 *.pt

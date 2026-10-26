@@ -2,15 +2,19 @@
 name = "airbnb-price-estimator"
 version = "0.1.0"
 requires-python = ">=3.11"
- 
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
- 
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
- 
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+filterwarnings = [
+    # Raised inside MLflow's SQLAlchemy store, not by project code.
+    "ignore:.*noload.*:DeprecationWarning",
+]

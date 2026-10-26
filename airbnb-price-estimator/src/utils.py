@@ -5,11 +5,14 @@ from __future__ import annotations
 import logging
 import os
 import random
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import yaml
+
 
 def load_config(path: str | Path = "config.yaml") -> dict[str, Any]:
     """Read the YAML config into a nested dict"""
@@ -36,3 +39,28 @@ def setup_logging() -> None:
         format="%(asctime)s | %(levelname)s | %(message)s",
         datefmt="%H:%M:%S"
     )
+
+
+@contextmanager
+def mlflow_run(cfg: dict[str, Any], run_name: str) -> Iterator[Any]:
+    """Open an MLFlow run if tracking is enabled in config: otherwise yield None.
+    
+    Usage:
+        with mlflow_run(cfg, "baseline") as mlflow:
+            if mlflow is not None:
+                mlflow.log_metric("mae", 12.3)
+    """
+    m = cfg.get("mlflow", {})
+    if not m.get("enabled", False):
+        yield None
+        return
+    os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")
+    import mlflow
+
+    mlflow.set_tracking_uri(m["tracking_uri"])
+    mlflow.set_experiment(m["experiment"])
+    with mlflow.start_run(run_name=run_name):
+        mlflow.set_tag("seed", cfg["seed"])
+        yield mlflow
+
+
