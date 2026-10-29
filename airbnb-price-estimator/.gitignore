@@ -22,4 +22,4 @@ pyvenv.cfg
 .vscode/
 .idea/
 .DS_Store
-.env
+.envmlflow.db
