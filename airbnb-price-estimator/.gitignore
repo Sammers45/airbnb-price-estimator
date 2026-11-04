@@ -23,3 +23,4 @@ pyvenv.cfg
 .idea/
 .DS_Store
 .envmlflow.db
+mlflow.db
