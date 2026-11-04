@@ -1,0 +1,27 @@
+{
+  "rows": 5555,
+  "n_folds": 5,
+  "n_features": 61,
+  "overall": [
+    {
+      "model": "naive: market median",
+      "mae_usd": 66.96,
+      "mdape_pct": 44.83,
+      "within_10_pct": 12.94,
+      "within_20_pct": 24.36,
+      "r2_log": 0.2454
+    },
+    {
+      "model": "LightGBM baseline",
+      "mae_usd": 45.86,
+      "mdape_pct": 26.98,
+      "within_10_pct": 19.87,
+      "within_20_pct": 38.27,
+      "r2_log": 0.6756
+    }
+  ],
+  "fold_mae_mean": 45.86,
+  "fold_mae_std": 4.14,
+  "final_rounds": 535,
+  "model_path": "models/baseline_lightgbm.txt"
+}
