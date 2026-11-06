@@ -109,3 +109,22 @@ text_model:
   dropout: 0.1
   inner_valid_frac: 0.1
   train_final: true
+
+image_model:
+  clip_model: openai/clip-vit-base-patch32
+  verify_photos: 40
+  verify_min_cosine: 0.95
+  probe_alphas: [0.1, 1, 10, 100, 1000]
+  prompts:
+    luxury: a photo of a luxurious, high-end home interior
+    modern: a photo of a modern, stylish apartment
+    view: a photo of a room with a sea or ocean view
+    pool: a photo of a swimming pool
+    garden: a photo of a garden or terrace
+    exterior: a photo of the outside of a house
+    bright: a photo of a bright, sunny room
+    cramped: a photo of a small, cramped room
+    basic: a photo of a plain, basic bedroom
+    dated: a photo of an old, dated interior
+    kitchen: a photo of a kitchen
+    bathroom: a photo of a bathroom
