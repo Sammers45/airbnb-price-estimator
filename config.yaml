@@ -128,3 +128,18 @@ image_model:
     dated: a photo of an old, dated interior
     kitchen: a photo of a kitchen
     bathroom: a photo of a bathroom
+
+fusion:
+  hidden: 64
+  heads: 4
+  dropout: 0.2
+  modality_dropout: 0.1
+  residual_on_baseline: true
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  batch_size: 128
+  max_epochs: 200
+  patience: 15
+  inner_valid_frac: 0.1
+  seeds: 3
+  train_final: true

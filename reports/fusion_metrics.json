@@ -1,0 +1,53 @@
+{
+  "rows": 5555,
+  "seeds": 3,
+  "modalities": [
+    "tab",
+    "text",
+    "image"
+  ],
+  "residual": true,
+  "best": "Fusion: concatenation",
+  "final_epochs": {
+    "concat": 2,
+    "attention": 2
+  },
+  "comparison": [
+    {
+      "model": "LightGBM baseline",
+      "mae_usd": 45.86,
+      "mdape_pct": 26.98,
+      "within_10_pct": 19.87,
+      "within_20_pct": 38.27,
+      "r2_log": 0.6756,
+      "mdape_vs_baseline": 0.0
+    },
+    {
+      "model": "Text only (DistilBERT)",
+      "mae_usd": 58.71,
+      "mdape_pct": 36.25,
+      "within_10_pct": 14.82,
+      "within_20_pct": 29.2,
+      "r2_log": 0.4592,
+      "mdape_vs_baseline": 9.27
+    },
+    {
+      "model": "Fusion: concatenation",
+      "mae_usd": 45.18,
+      "mdape_pct": 26.44,
+      "within_10_pct": 20.18,
+      "within_20_pct": 39.5,
+      "r2_log": 0.6842,
+      "mdape_vs_baseline": -0.54
+    },
+    {
+      "model": "Fusion: attention",
+      "mae_usd": 45.33,
+      "mdape_pct": 26.94,
+      "within_10_pct": 19.89,
+      "within_20_pct": 39.17,
+      "r2_log": 0.683,
+      "mdape_vs_baseline": -0.04
+    }
+  ]
+}
