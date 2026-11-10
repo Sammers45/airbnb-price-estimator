@@ -283,23 +283,23 @@ def compare(df: pl.DataFrame, pairs: list[tuple[str, str, str]], cfg: dict) -> p
                 "folds_B_wins": fold_wins(df, a, b),
             }
         )
-        if not rows:
-            return pl.DataFrame()
-        out = pl.DataFrame(rows)
-        adj = holm(out["p_bootstrap"].to_list())
-        alpha = e["alpha"]
-        return out.with_columns(
-            pl.Series("p_holm", adj),
-            pl.when((pl.Series(adj) < alpha) & (pl.col("mdape_change") < 0))
-            .then(pl.lit("better"))
-            .when((pl.Series(adj) < alpha) & (pl.col("mdape_change") > 0))
-            .then(pl.lit("worse"))
-            .otherwise(pl.lit("no siginificant difference"))
-            .alias("verdict"),
-        ).with_columns(
-            pl.col(c).map_elements(fmt_p, return_dtype=pl.String)
-            for c in ("p_bootstrap", "p_ttest_logerr", "p_holm")
-        )
+    if not rows:
+        return pl.DataFrame()
+    out = pl.DataFrame(rows)
+    adj = holm(out["p_bootstrap"].to_list())
+    alpha = e["alpha"]
+    return out.with_columns(
+        pl.Series("p_holm", adj),
+        pl.when((pl.Series(adj) < alpha) & (pl.col("mdape_change") < 0))
+        .then(pl.lit("better"))
+        .when((pl.Series(adj) < alpha) & (pl.col("mdape_change") > 0))
+        .then(pl.lit("worse"))
+        .otherwise(pl.lit("no siginificant difference"))
+        .alias("verdict"),
+    ).with_columns(
+        pl.col(c).map_elements(fmt_p, return_dtype=pl.String)
+        for c in ("p_bootstrap", "p_ttest_logerr", "p_holm")
+    )
 
 def fmt_p(p: float) -> str:
     return "<0.001" if p < 0.001 else f"{p:.3f}"
