@@ -33,21 +33,21 @@
     },
     {
       "model": "Fusion: concatenation",
-      "mae_usd": 45.18,
-      "mdape_pct": 26.44,
-      "within_10_pct": 20.18,
-      "within_20_pct": 39.5,
+      "mae_usd": 45.15,
+      "mdape_pct": 26.42,
+      "within_10_pct": 20.11,
+      "within_20_pct": 39.51,
       "r2_log": 0.6842,
-      "mdape_vs_baseline": -0.54
+      "mdape_vs_baseline": -0.56
     },
     {
       "model": "Fusion: attention",
-      "mae_usd": 45.33,
-      "mdape_pct": 26.94,
-      "within_10_pct": 19.89,
-      "within_20_pct": 39.17,
-      "r2_log": 0.683,
-      "mdape_vs_baseline": -0.04
+      "mae_usd": 45.31,
+      "mdape_pct": 26.84,
+      "within_10_pct": 20.05,
+      "within_20_pct": 39.19,
+      "r2_log": 0.6828,
+      "mdape_vs_baseline": -0.14
     }
   ]
 }

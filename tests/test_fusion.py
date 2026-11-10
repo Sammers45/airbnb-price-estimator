@@ -104,6 +104,7 @@ def test_tab_preprocessor_fits_on_training_rows_and_round_trips(cfg):
     valid = valid.with_columns(pl.lit("Atlantis").alias("market"))
     _, vcat = tab.transform(valid)
     assert (vcat[:, tab.categorical.index("market")] == 0).all()  # unseen -> 0
+    assert not [c for c in tab.numeric if c.startswith("img_") or c in ("base_log", "has_image")]
     clone = fu.TabPreprocessor.from_dict(json.loads(json.dumps(tab.to_dict())))
     assert np.array_equal(clone.transform(train)[0], num)
 
