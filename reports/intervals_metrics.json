@@ -1,0 +1,34 @@
+{
+  "rows": 5555,
+  "source_model": "Fusion NN: concatenation",
+  "route_level": "80",
+  "review_rate_pct": 20,
+  "min_market_rows": 30,
+  "width_threshold_pct": 149.4,
+  "coverage": [
+    {
+      "target_pct": 80,
+      "method": "constant",
+      "coverage_pct": 79.24,
+      "coverage_easy_third": 88.01,
+      "coverage_hard_third": 68.41,
+      "median_width_pct": 112.5,
+      "median_width_usd": 81.21
+    },
+    {
+      "target_pct": 80,
+      "method": "adaptive",
+      "coverage_pct": 79.42,
+      "coverage_easy_third": 72.79,
+      "coverage_hard_third": 84.83,
+      "median_width_pct": 109.1,
+      "median_width_usd": 78.25
+    }
+  ],
+  "flagged_pct": 20.1,
+  "auto_mdape_pct": 24.34,
+  "review_mdape_pct": 37.85,
+  "all_mdape_pct": 26.42,
+  "auto_within_10_pct": 21.51,
+  "big_errors_caught_pct": 32.2
+}

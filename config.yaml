@@ -148,3 +148,20 @@ evaluate: # Phase 7: runs on a normal CPU
   pca_components: 8 # principal components of the text / photo vectors (fit per training fold)
   bootstrap: 2000 # paired bootstrap resamples
   alpha: 0.05 # significance level after Holm correction
+
+intervals:               # Phase 8a: price ranges + human review, runs on a CPU
+  coverage_levels: [0.8, 0.9]  # promised share of true prices inside the ranges; the first drives routing
+  calib_frac: 0.4  # share of the training folds used to size the ranges
+  review_rate: 0.2  # aim to send about this share of listings to a person
+  min_market_rows: 30  # markets with fewer listings always go to review
+  difficulty:       # LightGBM predicting how wrong the price model will be 
+    num_boost_round: 300
+    learning_rate: 0.03
+    num_leaves: 15
+    min_data_in_leaf: 40
+
+explain:                # Phase 8b: explanation, runs on a CPU
+  shap_top: 15          # features shown in the SHAP chart
+  examples: 3           # listings explained one by one in the report
+  ig_rows: 500          # listings explained with Integrated Gradients (fusion neetwork)
+  ig_steps: 32          # integration steps
