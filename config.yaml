@@ -165,3 +165,23 @@ explain:                # Phase 8b: explanation, runs on a CPU
   examples: 3           # listings explained one by one in the report
   ig_rows: 500          # listings explained with Integrated Gradients (fusion neetwork)
   ig_steps: 32          # integration steps
+serve:                # Phase 9: price API + web design
+  model: fusion       # fusion (Phase 7 best) or baseline; falls back to baseline if fusion files are missing
+  use_text_model: true  # embed the description with the Phase 4 model, if models/text_model exists
+  use_photo: true     # embed uploaded photos with CLIP 
+  min_market_rows: 30  # markets offered on the form
+  log_dir: data/monitoring  # requests.jsonl, feedback.jsonl, errors.jsonl
+  host: 127.0.0.1
+  port: 8000
+
+monitor:                          # Phase 9: monitoring
+  features: [accommodates, bedrooms, bathrooms]  # numeric inputs checked fo drift
+  categories: [market, room_type] # categroical inputs checked for drift
+  psi_moderate: 0.1               
+  psi_major: 0.2
+  review_rate_tolerance: 10       # alert if the review rate moves more than this many points
+  min_feedback: 30                # real prices needed before checking range covering
+  coverage_alert_below: 75        # % of real prices inside the 80% range.
+  min_requests: 50                # drift is only checked once this many requests are logged
+  latency_p95_ms: 2000
+  max_error_pct: 1

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listing Price Estimator</title>
+<style>
+  :root { --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --card:#fff;
+          --accent:#2f5f9e; --warn:#b54708; --warn-bg:#fef0c7; --ok:#067647; --ok-bg:#dcfae6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--ink); background:var(--bg); }
+  header { padding:20px 24px 4px; max-width:1100px; margin:auto; }
+  h1 { font-size:22px; margin:0; }
+  header p { margin:4px 0 0; color:var(--muted); }
+  main { display:grid; grid-template-columns: 1.1fr 1fr; gap:20px; max-width:1100px; margin:auto; padding:16px 24px 40px; }
+  @media (max-width: 860px) { main { grid-template-columns:1fr; padding:12px 16px 32px; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; }
+  h2 { font-size:16px; margin:0 0 12px; }
+  label { display:block; font-size:13px; color:var(--muted); margin-bottom:4px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:12px; margin-bottom:12px; }
+  select, input[type=number], input[type=text], textarea { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; font:inherit; background:#fff; color:var(--ink); }
+  textarea { min-height:90px; resize:vertical; }
+  .amen { display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:4px 12px; margin:6px 0 12px; font-size:13px; }
+  .amen label { display:flex; gap:6px; align-items:center; color:var(--ink); margin:0; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:6px; padding:10px 18px; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .price { font-size:38px; font-weight:700; margin:4px 0; }
+  .muted { color:var(--muted); font-size:13px; }
+  .bar { position:relative; height:10px; background:var(--line); border-radius:5px; margin:18px 0 6px; }
+  .bar .fill { position:absolute; top:0; bottom:0; background:#b9cde8; border-radius:5px; }
+  .bar .dot { position:absolute; top:-4px; width:18px; height:18px; margin-left:-9px; background:var(--accent); border:3px solid #fff; border-radius:50%; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:13px; font-weight:600; margin-top:12px; }
+  .badge.review { background:var(--warn-bg); color:var(--warn); }
+  .badge.auto { background:var(--ok-bg); color:var(--ok); }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin-top:6px; }
+  td { padding:6px 4px; border-bottom:1px solid var(--line); }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .up { color:var(--ok); } .down { color:#b42318; }
+  .error { color:#b42318; margin-top:10px; }
+  .mon { margin-top:20px; }
+  .mon ul { margin:6px 0 0; padding-left:18px; }
+  #result .empty { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Listing price estimator</h1>
+  <p>Describe a new listing. Fields you leave empty take the typical value for its market.</p>
+</header>
+<main>
+  <form class="card" id="form">
+    <h2>Listing</h2>
+    <div class="grid">
+      <div><label for="market">Market</label><select id="market" required></select></div>
+      <div><label for="neighbourhood">Neighbourhood</label><select id="neighbourhood"></select></div>
+      <div><label for="room_type">Room type</label><select id="room_type"></select></div>
+      <div><label for="property_type">Property type</label><select id="property_type"></select></div>
+    </div>
+    <div class="grid" id="numbers"></div>
+    <label>Amenities</label>
+    <div class="amen" id="amenities"></div>
+    <label for="title">Title</label>
+    <input type="text" id="title" placeholder="Bright 2-bedroom near the beach" style="margin-bottom:12px">
+    <label for="description">Description</label>
+    <textarea id="description" placeholder="What makes it special?"></textarea>
+    <div style="margin:12px 0">
+      <label for="photo">Main photo (optional)</label>
+      <input type="file" id="photo" accept="image/*">
+    </div>
+    <button id="go" type="submit">Estimate price</button>
+    <div class="error" id="error"></div>
+  </form>
+
+  <section>
+    <div class="card" id="result"><p class="empty">The estimate appears here.</p></div>
+    <div class="card mon" id="monitoring"><h2>Service monitoring</h2><p class="muted">Loading…</p></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const LABELS = { accommodates: "Guests", bedrooms: "Bedrooms", beds: "Beds", bathrooms: "Bathrooms",
+                 minimum_nights: "Minimum nights" };
+const pretty = (s) => LABELS[s] || s.replace(/^amen_/, "").replace(/_/g, " ");
+const money = (v) => "$" + Math.round(v).toLocaleString();
+let FORM = null;
+
+function options(sel, values, blank) {
+  sel.innerHTML = (blank ? `<option value="">${blank}</option>` : "") +
+    values.map(v => `<option value="${v}">${v}</option>`).join("");
+}
+
+function fillMarket() {
+  const m = FORM.markets[$("market").value];
+  options($("neighbourhood"), Object.keys(m.neighbourhoods), "Typical location");
+  for (const c of FORM.numbers) {
+    const v = m.typical[c];
+    $(c).placeholder = v == null ? "" : `typical: ${Math.round(v * 10) / 10}`;
+  }
+  for (const a of FORM.amenities) $(a).checked = (m.typical[a] ?? 0) >= 0.5;
+}
+
+async function init() {
+  FORM = await (await fetch("/form")).json();
+  options($("market"), Object.keys(FORM.markets));
+  options($("room_type"), FORM.room_types, "Typical");
+  options($("property_type"), FORM.property_types, "Typical");
+  $("numbers").innerHTML = FORM.numbers.map(c =>
+    `<div><label for="${c}">${pretty(c)}</label><input type="number" id="${c}" min="0" step="0.5"></div>`).join("");
+  $("amenities").innerHTML = FORM.amenities.map(a =>
+    `<label><input type="checkbox" id="${a}"> ${pretty(a)}</label>`).join("");
+  $("market").addEventListener("change", fillMarket);
+  fillMarket();
+  loadMonitoring();
+}
+
+function listing() {
+  const x = { market: $("market").value, amenities: FORM.amenities.filter(a => $(a).checked),
+              title: $("title").value, description: $("description").value };
+  for (const c of ["neighbourhood", "room_type", "property_type"]) if ($(c).value) x[c] = $(c).value;
+  for (const c of FORM.numbers) if ($(c).value !== "") x[c] = Number($(c).value);
+  return x;
+}
+
+function show(r) {
+  const lo = r.range.low, hi = r.range.high;
+  const a = lo * 0.75, b = hi * 1.1;  // show a little room on both sides of the range
+  const pct = (v) => (100 * (v - a) / Math.max(b - a, 1)).toFixed(1) + "%";
+  const reasons = r.reasons.map(x => `<tr><td>${pretty(x.feature)} = <b>${x.value}</b></td>
+      <td class="num ${x.effect_pct >= 0 ? "up" : "down"}">${x.effect_pct >= 0 ? "+" : ""}${x.effect_pct}%</td></tr>`).join("");
+  const used = [r.used_text ? "description" : null, r.used_photo ? "photo" : null].filter(Boolean);
+  $("result").innerHTML = `
+    <h2>Estimated nightly price</h2>
+    <div class="price">${money(r.price)}</div>
+    <div class="muted">${r.range.level}% likely between ${money(lo)} and ${money(hi)}</div>
+    <div class="bar"><div class="fill" style="left:${pct(lo)};width:calc(${pct(hi)} - ${pct(lo)})"></div>
+      <div class="dot" style="left:${pct(r.price)}"></div></div>
+    ${r.review
+      ? `<span class="badge review">Send to a pricing analyst: ${r.review_reason}</span>`
+      : `<span class="badge auto">Confident: can be priced automatically</span>`}
+    <h2 style="margin-top:20px">Why</h2>
+    <div class="muted">Typical listing: ${money(r.typical_price)}. Main effects (LightGBM part):</div>
+    <table>${reasons}</table>
+    ${r.note ? `<p class="error">${r.note}</p>` : ""}
+    <p class="muted">Model: ${r.model}${used.length ? " · used the " + used.join(" and ") : ""} · ${r.latency_ms} ms · id ${r.id}</p>`;
+}
+
+async function loadMonitoring() {
+  try {
+    const s = await (await fetch("/monitoring")).json();
+    if (!s.requests) { $("monitoring").innerHTML = `<h2>Service monitoring</h2><p class="muted">No requests yet.</p>`; return; }
+    const p = s.pipeline, o = s.outcomes;
+    $("monitoring").innerHTML = `<h2>Service monitoring</h2>
+      <div class="muted">${p.requests} requests · p95 ${p.latency_p95_ms} ms · ${p.review_pct}% sent to review
+      ${o ? ` · coverage ${o.range_coverage_pct}% on ${o.with_actual_price} known prices` : ""}</div>
+      <ul>${(s.alerts.length ? s.alerts : ["No alerts"]).map(a => `<li>${a}</li>`).join("")}</ul>`;
+  } catch (e) { $("monitoring").innerHTML = `<h2>Service monitoring</h2><p class="muted">Unavailable.</p>`; }
+}
+
+$("form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  $("error").textContent = ""; $("go").disabled = true; $("go").textContent = "Estimating…";
+  const body = new FormData();
+  body.append("listing", JSON.stringify(listing()));
+  if ($("photo").files[0]) body.append("photo", $("photo").files[0]);
+  try {
+    const res = await fetch("/predict", { method: "POST", body });
+    const data = await res.json();
+    if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail));
+    show(data); loadMonitoring();
+  } catch (e) { $("error").textContent = "Could not estimate: " + e.message; }
+  $("go").disabled = false; $("go").textContent = "Estimate price";
+});
+
+init();
+</script>
+</body>
+</html>
