@@ -424,12 +424,12 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
     for (lv, method), r in cov.items():
         print(
             f"{lv}% range, {method:<8} coverage {r['coverage_pct']:>6}%  "
-            f")easy {r['coverage_easy_third']}%, hard {r['coverage_hard_third']}%) "
+            f"(easy {r['coverage_easy_third']}%, hard {r['coverage_hard_third']}%) "
             f"median width {r['median_width_pct']}%"
         )
     print(
         f"Sent to review: {summary['flagged_pct']}% of listings, catching "
-        f"{summary['big_errors_caught_pct']}%, all {summary['all_mdape_pct']}%"
+        f"{summary['big_errors_caught_pct']}% of errors over 50%"
     )
     print(
         f"MdAPE: auto-priced {summary['auto_mdape_pct']}%, "
