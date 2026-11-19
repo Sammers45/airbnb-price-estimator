@@ -132,7 +132,8 @@ function show(r) {
   $("result").innerHTML = `
     <h2>Estimated nightly price</h2>
     <div class="price">${money(r.price)}</div>
-    <div class="muted">${r.range.level}% likely between ${money(lo)} and ${money(hi)}</div>
+    <div class="muted">${r.range.level}% likely between ${money(lo)} and ${money(hi)}
+      ${r.range_basis ? `· range sized for: ${r.range_basis}` : ""}</div>
     <div class="bar"><div class="fill" style="left:${pct(lo)};width:calc(${pct(hi)} - ${pct(lo)})"></div>
       <div class="dot" style="left:${pct(r.price)}"></div></div>
     ${r.review

@@ -1,15 +1,15 @@
 """Phase 9: monitoring the live price service. Runs on a CPU.
 
-Usage: 
-    python -m src.monitor       # report on logged requests
-    python -m src.monitor simulate --n 300 --fresh  # replay real listings
-    python -m src.monitor simulate --n 200 --market "Rio De Janeiro"  # shifted week: drift
+Usage:
+    python -m src.monitor                                   # report on logged requests
+    python -m src.monitor simulate --n 300 --fresh          # replay real listings
+    python -m src.monitor simulate --n 200 --market "Rio De Janeiro"   # shifted week: drift
 
-Three kinds of checks, comapred with the trainig data (models/serving/reference.json):
+Three kinds of checks, compared with the training data (models/serving/reference.json):
 1. Pipeline health: errors, latency, how often the photo / description were used.
-2. Drift: do incoming listings and predicted prices look like the training data ?
-   PSI (population stablity index): < 0.1 stable, 0.1-0.2 moderate shift, > 0.2 major shift
-3. Outcome: once real prices come back (POST /feedback), the actual error and how often the 
+2. Drift: do incoming listings and predicted prices look like the training data?
+   PSI (population stability index): < 0.1 stable, 0.1-0.2 moderate shift, > 0.2 major shift.
+3. Outcomes: once real prices come back (POST /feedback), the actual error and how often the
    80% range contained the real price.
 """
 
@@ -30,17 +30,21 @@ from src.utils import load_config, setup_logging
 log = logging.getLogger(__name__)
 EPS = 1e-4
 
-### ---------------------------------------------------------------------------------------- REFERENCE
+
+# --------------------------------------------------------------------------- reference
 def edges_of(values: np.ndarray, bins: int = 10) -> list[float]:
     """Inner bin edges at the deciles of the reference values (duplicates removed)."""
     v = values[~np.isnan(values)]
     return sorted(set(np.quantile(v, np.linspace(0, 1, bins + 1)[1:-1]).round(6).tolist()))
 
+
 def shares(values: np.ndarray, edges: list[float]) -> list[float]:
+    """Share of values in each bin; missing values get their own last bin."""
     v = np.asarray(values, dtype=float)
     counts = np.bincount(np.digitize(v[~np.isnan(v)], edges), minlength=len(edges) + 1)
     counts = np.append(counts, np.isnan(v).sum())
     return (counts / max(len(v), 1)).tolist()
+
 
 def cat_shares(values: list[Any], cats: list[str]) -> list[float]:
     """Share of each known category, plus one bin for anything unseen."""
@@ -48,9 +52,11 @@ def cat_shares(values: list[Any], cats: list[str]) -> list[float]:
     known = [sum(v == c for v in values) / n for c in cats]
     return [*known, 1 - sum(known)]
 
+
 def psi(ref: list[float], live: list[float]) -> float:
     r, x = np.clip(np.array(ref), EPS, None), np.clip(np.array(live), EPS, None)
     return float(np.sum((x - r) * np.log(x / r)))
+
 
 def build_reference(cfg: dict[str, Any]) -> dict[str, Any]:
     """What 'normal' looks like: training feature mix, predicted prices, review rate, widths."""
@@ -81,18 +87,20 @@ def build_reference(cfg: dict[str, Any]) -> dict[str, Any]:
         )
     else:
         log.warning(
-            "%s not found: price / review-rate drift checks will be skipped (run Phase 8)." 
+            "%s not found: price / review-rate drift checks will be skipped (run Phase 8)", iv
         )
     out = Path(cfg["paths"]["models"]) / "serving" / "reference.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(ref, indent=2), encoding="utf-8")
     return ref
 
-### ------------------------------------------------------------------------------------------ SUMMARY
+
+# --------------------------------------------------------------------------- summary
 def read_log(path: Path) -> pl.DataFrame:
     if not path.exists() or path.stat().st_size == 0:
         return pl.DataFrame()
     return pl.read_ndjson(path, infer_schema_length=None)
+
 
 def status(value: float, m: dict[str, Any]) -> str:
     return (
@@ -102,6 +110,7 @@ def status(value: float, m: dict[str, Any]) -> str:
         if value > m["psi_moderate"]
         else "stable"
     )
+
 
 def summarise(cfg: dict[str, Any]) -> dict[str, Any]:
     """Everything the monitoring report and the /monitoring endpoint show."""
@@ -114,7 +123,7 @@ def summarise(cfg: dict[str, Any]) -> dict[str, Any]:
     if req.height == 0:
         return out
 
-    # 1. Pipeline health
+    # 1. pipeline health
     lat = req["latency_ms"].to_numpy()
     out["pipeline"] = {
         "requests": req.height,
@@ -131,7 +140,7 @@ def summarise(cfg: dict[str, Any]) -> dict[str, Any]:
     }
     if out["pipeline"]["error_pct"] > m["max_error_pct"]:
         out["alerts"].append(
-            f"Error rate {out["pipeline"]["error_pct"]}% (limit {m['max_error_pct']}%)"
+            f"Error rate {out['pipeline']['error_pct']}% (limit {m['max_error_pct']}%)"
         )
     if out["pipeline"]["latency_p95_ms"] > m["latency_p95_ms"]:
         out["alerts"].append(
@@ -139,10 +148,9 @@ def summarise(cfg: dict[str, Any]) -> dict[str, Any]:
             f"(limit {m['latency_p95_ms']} ms)"
         )
 
-
-    # 2. Drift
+    # 2. drift
     drift = []
-    if ref is not None and req.height >= m["min_requests"]:
+    if ref is not None and req.height >= m["min_requests"]:  # too few requests = noisy PSI
         for c, r in ref["numeric"].items():
             if c in req.columns:
                 drift.append(
@@ -175,7 +183,7 @@ def summarise(cfg: dict[str, Any]) -> dict[str, Any]:
                     f"vs {ref['review_pct']}% in training"
                 )
     out["drift"] = [
-        {"kind": k, "feature": f, "psi": round(v, 3), "status":  status(v, m)} for k, f, v in drift
+        {"kind": k, "feature": f, "psi": round(v, 3), "status": status(v, m)} for k, f, v in drift
     ]
     out["alerts"] += [
         f"{d['status'].capitalize()} in {d['feature']} (PSI {d['psi']})"
@@ -183,7 +191,7 @@ def summarise(cfg: dict[str, Any]) -> dict[str, Any]:
         if d["status"] != "stable"
     ]
 
-    # 3. Outcomes
+    # 3. outcomes
     if fb.height:
         j = req.join(fb.select("id", "actual_price").unique("id", keep="last"), on="id")
         if j.height:
@@ -205,12 +213,12 @@ def summarise(cfg: dict[str, Any]) -> dict[str, Any]:
 
 
 def write_report(path: Path, s: dict[str, Any]) -> None:
-    lines = ['# Monitoring', "_Generated by `python -m src.monitor`. Do not edit by hand_.", ""]
+    lines = ["# Monitoring", "_Generated by `python -m src.monitor`. Do not edit by hand._", ""]
     if s["requests"] == 0:
-        lines.append("")
+        lines.append("No requests logged yet.")
     else:
         lines += ["## Alerts"] + ([f"- {a}" for a in s["alerts"]] or ["- None"]) + [""]
-        lines += ["## 1. Pipeline health", md(pl.DataFrame([s['pipeline']])), ""]
+        lines += ["## 1. Pipeline health", md(pl.DataFrame([s["pipeline"]])), ""]
         lines += ["## 2. Drift (PSI: < 0.1 stable, 0.1-0.2 moderate, > 0.2 major)"]
         lines += [
             md(pl.DataFrame(s["drift"]))
@@ -224,19 +232,20 @@ def write_report(path: Path, s: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-### ----------------------------------------------------------------------------------------- SIMULATE
+
+# --------------------------------------------------------------------------- simulate
 def simulate(
-        cfg: dict[str, Any], n: int, market: str | None, seed: int, form_only: bool = False
+    cfg: dict[str, Any], n: int, market: str | None, seed: int, form_only: bool = False
 ) -> None:
     """Replay real listings through the service and send back their real price.
-    
+
     These listings were in the training data, so accuracy here is optimistic; the point is to
-    exercise the pipeline and show the drift checks (e.g., a week of only one market).
-    By default the listing's real values are used for every feature; ``form_only`` sends just 
-    what a host types into the web page.
-    """    
+    exercise the pipeline and show the drift checks (e.g. a week of only one market).
+    By default the listing's real values are used for every feature; ``form_only`` sends just
+    what a host types into the web page (everything else = the market's typical value).
+    """
     from src.image_model import unit
-    from src.serve import Listing, Predictor, append, log_request
+    from src.serve import Predictor, append, listing_from_row, log_request
 
     p = Predictor(cfg)
     df = pl.read_parquet(cfg["paths"]["processed"]).filter(
@@ -245,32 +254,24 @@ def simulate(
     if market:
         df = df.filter(pl.col("market") == market)
     df = df.sample(min(n, df.height), seed=seed)
-    fileds = set(Listing.model_fields)
     logs = Path(cfg["serve"]["log_dir"])
     for r in df.iter_rows(named=True):
-        x = Listing(
-            **{
-                k: v
-                for k, v in r.items()
-                if k in fileds and k not in ("amenities", "description") and v is not None
-            },
-            amenities=[a for a in p.form["amenities"] if r.get(a) == 1],
-            description=r.get("text") or "",
-        )
+        x = listing_from_row(r, p.form)
         vec = (
             unit(np.array(r["image_embeddings"], dtype=np.float32))
             if r.get("has_image_emb") == 1
-            else None   
+            else None
         )
         out = p.predict(x, photo_vec=vec, known=None if form_only else r)
         log_request(cfg, x, out)
         append(logs / "feedback.jsonl", {"id": out["id"], "actual_price": r["price"]})
     print(f"Replayed {df.height} listings{' from ' + market if market else ''}")
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 9: monitoring")
     parser.add_argument("command", nargs="?", choices=["report", "simulate"], default="report")
-    parser.add_argument("--n",type=int, default=300)
+    parser.add_argument("--n", type=int, default=300)
     parser.add_argument("--market", default=None)
     parser.add_argument("--fresh", action="store_true", help="delete earlier logs first")
     parser.add_argument("--form-only", action="store_true", help="send only the web-form fields")
@@ -285,7 +286,7 @@ def main() -> None:
         simulate(cfg, args.n, args.market, cfg["seed"], args.form_only)
     s = summarise(cfg)
     path = Path(cfg["paths"]["reports"]) / "monitoring.md"
-    with pl.Config(tbl_width_chars=1000, fmt_str_lengths=200):
+    with pl.Config(tbl_width_chars=1000, fmt_str_lengths=200):  # keep table headers on one line
         write_report(path, s)
     if s["requests"]:
         print(
@@ -300,6 +301,7 @@ def main() -> None:
             )
     print("Alerts:", *(s["alerts"] or ["none"]), sep="\n  ")
     print(f"Report: {path}")
+
 
 if __name__ == "__main__":
     main()

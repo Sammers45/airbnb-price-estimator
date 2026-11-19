@@ -1,32 +1,32 @@
 """Phase 9: price API and web page. Runs on a CPU.
 
 Usage:
-    python -m src.serve build   # once: form options and typical values per market
-    python -m src.serve run     # open http://127.0.0.1:8000
+    python -m src.serve build      # once: form options and typical values per market
+    python -m src.serve run        # open http://127.0.0.1:8000
 
-One request = one NEW listing described on the web page. Fields that are not on the form 
-(review score, host details, ...) are filled with the typical value for that market.
+One request = one NEW listing described on the web page. Fields that are not on the form
+(review scores, host details, ...) are filled with the typical value for that market.
 
 Pipeline for one request:
-1. LightGBM baseline (Phase 3) on the table features -> base price
-2. Fusion networrk (Phase 6) adds a correction from the description (Phase 4 text model)
+1. LightGBM baseline (Phase 3) on the table features  -> base price
+2. Fusion network (Phase 6) adds a correction from the description (Phase 4 text model)
    and the photo (CLIP, Phase 5). Missing text or photo is masked, as in training.
 3. Calibrator (Phase 8) -> 80% price range and the human-review decision
 4. SHAP (Phase 8) -> the top reasons
 Every request is appended to data/monitoring/requests.jsonl for Phase 9 monitoring.
-"""  
+"""
 
 from __future__ import annotations
 
 import argparse
-import json
 import io
+import json
 import logging
 import time
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Annotated
+from typing import Annotated, Any
 
 import numpy as np
 import polars as pl
@@ -44,10 +44,12 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 FORM_NUMBERS = ["accommodates", "bedrooms", "beds", "bathrooms", "minimum_nights"]
 NOT_FEATURES = {"listing_id", "price", "log_price", "price_local", "fold"}
 
-## ------------------------------------------------------------------------------- BUILD
-def build_form(cfg: dict[str, Any]) -> dict[str, Any]:
+
+# --------------------------------------------------------------------------- build
+def build_form(cfg: dict[str, Any], df: pl.DataFrame | None = None) -> dict[str, Any]:
     """Dropdown options and a 'typical listing' per market, from the processed data."""
-    df = pl.read_parquet(cfg["paths"]["processed"]).with_columns(pl.col("market").fill_null(""))
+    df = df if df is not None else pl.read_parquet(cfg["paths"]["processed"])
+    df = df.with_columns(pl.col("market").fill_null(""))
     s = cfg["serve"]
     numeric = [
         c
@@ -57,7 +59,7 @@ def build_form(cfg: dict[str, Any]) -> dict[str, Any]:
     cats = [c for c in CATEGORICAL if c in df.columns]
     markets = {}
     counts = df["market"].value_counts().sort("count", descending=True)
-    for m,n in counts.iter_rows():
+    for m, n in counts.iter_rows():
         if n < s["min_market_rows"] or not m:
             continue
         part = df.filter(pl.col("market") == m)
@@ -84,7 +86,7 @@ def build_form(cfg: dict[str, Any]) -> dict[str, Any]:
             "typical": {
                 k: (float(v) if isinstance(v, int | float) else v) for k, v in typical.items()
             },
-        "neighbourhoods": {r.pop("neighbourhood"): r for r in hoods.drop("n").to_dicts()},
+            "neighbourhoods": {r.pop("neighbourhood"): r for r in hoods.drop("n").to_dicts()},
         }
     return {
         "markets": markets,
@@ -100,7 +102,7 @@ def build_form(cfg: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-## -------------------------------------------------------------------------------------- REQUEST
+# --------------------------------------------------------------------------- request
 class Listing(BaseModel):
     """What the web page sends. Anything left out takes the market's typical value."""
 
@@ -117,12 +119,55 @@ class Listing(BaseModel):
     title: str = ""
     description: str = ""
 
+
 class Feedback(BaseModel):
     id: str
     actual_price: float = Field(gt=0)
 
+
+def listing_row(form: dict[str, Any], x: Listing, known: dict[str, Any] | None = None) -> dict:
+    """The request as one row of the processed table (as a dict)."""
+    if x.market not in form["markets"]:
+        raise ValueError(f"Unknown market {x.market!r}")
+    mk = form["markets"][x.market]
+    row = dict(mk["typical"]) | {"listing_id": "request", "market": x.market}
+    if known:  # monitoring replays: the listing's real values for fields not on the form
+        row |= {k: v for k, v in known.items() if k in row and v is not None}
+    if x.neighbourhood:
+        row["neighbourhood"] = x.neighbourhood
+        row |= mk["neighbourhoods"].get(x.neighbourhood, {})
+    for c in ("room_type", "property_type", *form["numbers"]):
+        if getattr(x, c, None) is not None:
+            row[c] = getattr(x, c)
+    if form["amenities"]:
+        chosen = set(x.amenities) & set(form["amenities"])
+        before = sum(row.get(a, 0) or 0 for a in form["amenities"])
+        for a in form["amenities"]:
+            row[a] = 1 if a in chosen else 0
+        if "amenities_count" in row:
+            row["amenities_count"] = max(row["amenities_count"] - before + len(chosen), len(chosen))
+    text = " . ".join(t.strip() for t in (x.title, x.description) if t.strip())
+    return row | {"text": text, "text_n_words": len(text.split())}
+
+
+def listing_from_row(r: dict[str, Any], form: dict[str, Any]) -> Listing:
+    """What a host would type into the form for an existing listing (used by replays)."""
+    fields = set(Listing.model_fields) - {"amenities", "description"}
+    values = {k: v for k, v in r.items() if k in fields and v is not None}
+    for k, v in values.items():  # real data can exceed the form's limits (e.g. 1,250 nights)
+        for limit in Listing.model_fields[k].metadata:
+            v = max(v, limit.ge) if hasattr(limit, "ge") else v
+            v = min(v, limit.le) if hasattr(limit, "le") else v
+        values[k] = v
+    return Listing(
+        **values,
+        amenities=[a for a in form["amenities"] if r.get(a) == 1],
+        description=r.get("text") or "",
+    )
+
+
 class Predictor:
-    """Load every trained part once; ``predict`` prices one listing."""
+    """Loads every trained part once; ``predict`` prices one listing."""
 
     def __init__(self, cfg: dict[str, Any]) -> None:
         self.cfg, s = cfg, cfg["serve"]
@@ -133,14 +178,16 @@ class Predictor:
         self.form = json.loads(form_path.read_text(encoding="utf-8"))
         self.booster, self.fb = load_baseline(models)
         self.calibrator = Calibrator.load(models / "intervals")
+        form_cal = models / "intervals_form"  # Phase 10: ranges sized for form-only input
+        self.form_calibrator = Calibrator.load(form_cal) if form_cal.exists() else None
         self.fusion = self._load_fusion(models) if s["model"] == "fusion" else None
         self.model_name = "fusion" if self.fusion else "baseline"
         self.text = self._load_text(models) if self.fusion and s["use_text_model"] else None
         self.prompts = self._load_prompts(models)
-        self._clip: Any = None
+        self._clip: Any = None  # loaded on the first uploaded photo
         log.info("Serving the %s model (text model: %s)", self.model_name, self.text is not None)
 
-        ## ------- optional parts
+    # ---- optional parts
     def _load_fusion(self, models: Path) -> dict[str, Any] | None:
         d = models / "fusion_concat"
         if not (d / "model.pt").exists():
@@ -192,31 +239,7 @@ class Predictor:
 
     # ---- one listing
     def listing_row(self, x: Listing, known: dict[str, Any] | None = None) -> pl.DataFrame:
-        """The request as one row of the processed table."""
-        if x.market not in self.form["markets"]:
-            raise ValueError(f"Unknown market {x.market!r}")
-        mk = self.form["markets"][x.market]
-        row = dict(mk["typical"]) | {"listing_id": "request", "market": x.market}
-        if known:  # monitoring replays: the listing's real values for fields not on the form
-            row |= {k: v for k, v in known.items() if k in row and v is not None}
-        if x.neighbourhood:
-            row["neighbourhood"] = x.neighbourhood
-            row |= mk["neighbourhoods"].get(x.neighbourhood, {})
-        for c in ("room_type", "property_type", *self.form["numbers"]):
-            if getattr(x, c, None) is not None:
-                row[c] = getattr(x, c)
-        if self.form["amenities"]:
-            chosen = set(x.amenities) & set(self.form["amenities"])
-            before = sum(row.get(a, 0) or 0 for a in self.form["amenities"])
-            for a in self.form["amenities"]:
-                row[a] = 1 if a in chosen else 0
-            if "amenities_count" in row:
-                row["amenities_count"] = max(
-                    row["amenities_count"] - before + len(chosen), len(chosen)
-                )
-        text = " . ".join(t.strip() for t in (x.title, x.description) if t.strip())
-        row |= {"text": text, "text_n_words": len(text.split())}
-        return pl.DataFrame([row], infer_schema_length=None)
+        return pl.DataFrame([listing_row(self.form, x, known)], infer_schema_length=None)
 
     def photo_vector(self, image: Any) -> np.ndarray:
         from src.image_model import embed_image
@@ -289,10 +312,11 @@ class Predictor:
         if self.fusion:
             pred_log = self.fusion_log_price(row, base_log, row["text"][0], photo_vec)
         price = float(np.expm1(pred_log))
-        r = self.calibrator.apply(row.with_columns(pl.lit(pred_log).alias("pred_log"))).row(
-            0, named=True
-        )
-        k = f"{round(self.calibrator.levels[0] * 100)}"
+        # A web request has only the form fields: use the ranges sized for that (Phase 10).
+        new_listing = known is None and self.form_calibrator is not None
+        cal = self.form_calibrator if new_listing else self.calibrator
+        r = cal.apply(row.with_columns(pl.lit(pred_log).alias("pred_log"))).row(0, named=True)
+        k = f"{round(cal.levels[0] * 100)}"
         why = explain_listing(self.booster, self.fb, row, top=5)
         return {
             "id": uuid.uuid4().hex[:12],
@@ -304,6 +328,7 @@ class Predictor:
                 "low": round(r[f"lo_{k}"], 2),
                 "high": round(r[f"hi_{k}"], 2),
             },
+            "range_basis": "form only (new listing)" if new_listing else "full listing data",
             "review": bool(r["review"]),
             "review_reason": r["reason"] or None,
             "reasons": why["reasons"],
@@ -313,11 +338,14 @@ class Predictor:
             "note": note,
             "latency_ms": round(1000 * (time.perf_counter() - start), 1),
         }
-## -------------------------------------------------------------------- LOGGING
+
+
+# --------------------------------------------------------------------------- logging
 def append(path: Path, record: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
+
 
 def log_request(cfg: dict[str, Any], x: Listing, out: dict[str, Any]) -> None:
     append(
@@ -344,8 +372,8 @@ def log_request(cfg: dict[str, Any], x: Listing, out: dict[str, Any]) -> None:
         },
     )
 
-## ------------------------------------------------------------- API
 
+# --------------------------------------------------------------------------- API
 def create_app(cfg: dict[str, Any] | None = None, predictor: Predictor | None = None) -> FastAPI:
     cfg = cfg or load_config()
     p = predictor or Predictor(cfg)
@@ -358,9 +386,7 @@ def create_app(cfg: dict[str, Any] | None = None, predictor: Predictor | None = 
 
     @app.get("/form")
     def form() -> dict[str, Any]:
-        return {
-            **p.form, "model": p.model_name, "text_model": p.text is not None
-        }
+        return {**p.form, "model": p.model_name, "text_model": p.text is not None}
 
     @app.get("/health")
     def health() -> dict[str, Any]:
@@ -375,7 +401,7 @@ def create_app(cfg: dict[str, Any] | None = None, predictor: Predictor | None = 
     async def predict(
         listing: Annotated[str, Form()], photo: Annotated[UploadFile | None, File()] = None
     ) -> dict[str, Any]:
-        try: 
+        try:
             x = Listing.model_validate_json(listing)
         except ValidationError as e:
             raise HTTPException(422, e.errors(include_url=False, include_context=False)) from e
@@ -385,9 +411,8 @@ def create_app(cfg: dict[str, Any] | None = None, predictor: Predictor | None = 
 
             try:
                 image = Image.open(io.BytesIO(await photo.read()))
-            except Exception as e:
-                raise HTTPException(422, "The photo could not br read as image") from e
-
+            except Exception as e:  # noqa: BLE001
+                raise HTTPException(422, "The photo could not be read as an image") from e
         try:
             out = p.predict(x, image)
         except ValueError as e:
@@ -407,7 +432,7 @@ def create_app(cfg: dict[str, Any] | None = None, predictor: Predictor | None = 
         """The real price, once known: lets monitoring measure accuracy and range coverage."""
         append(
             logs / "feedback.jsonl",
-            {"time": datetime.now(UTC).isoformat(timespec="seconds"), **fb.model_dump()}
+            {"time": datetime.now(UTC).isoformat(timespec="seconds"), **fb.model_dump()},
         )
         return {"status": "saved"}
 
@@ -418,6 +443,7 @@ def create_app(cfg: dict[str, Any] | None = None, predictor: Predictor | None = 
         return summarise(cfg)
 
     return app
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 9: price API and web page")
@@ -439,6 +465,7 @@ def main() -> None:
         import uvicorn
 
         uvicorn.run(create_app(cfg), host=cfg["serve"]["host"], port=cfg["serve"]["port"])
+
 
 if __name__ == "__main__":
     main()
