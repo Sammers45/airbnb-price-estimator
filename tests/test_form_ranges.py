@@ -60,11 +60,13 @@ def test_form_only_ranges_are_honest_and_saved(cfg, tmp_path):
     assert not leaked  # the difficulty model only sees what the form provides
 
 
-
 def test_values_beyond_the_form_limits_are_capped():
     form = {"amenities": []}
-    x = sv.listing_from_row({"market": "Porto", "minimum_nights": 1250.0, "accommodates": 0.0}, form)
+    x = sv.listing_from_row(
+        {"market": "Porto", "minimum_nights": 1250.0, "accommodates": 0.0}, form
+    )
     assert x.minimum_nights == 365 and x.accommodates == 1  # the form's own limits
+
 
 def test_service_uses_form_ranges_for_web_requests(cfg):
     pytest.importorskip("torch")

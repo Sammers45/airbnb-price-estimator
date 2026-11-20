@@ -7,12 +7,12 @@ Usage:
     tab -> tab + text -> tab + image -> tab + text + image
    Text enters as the text model's out-of-fold predicted price + 8 principal components
    of the text vector; the photo as its predicted price, the 12 prompt scores, 8 principal
-   components and a has-photo flag. Principal components are fit on training rows only. 
+   components and a has-photo flag. Principal components are fit on training rows only.
 
 2. Leaderboard of every model (all out-of-fold, same 5,555 listings, same folds).
 
 3. Significance: paired bootstrap on per-listing errors (95% CI and p-value for the change
-    in MdAPE, MAE, and within-10%), a paired t-test on absolute log errors, Holm correction 
+    in MdAPE, MAE, and within-10%), a paired t-test on absolute log errors, Holm correction
     across comparisons, and fold-by-fold consistency.
 
 4. Saves the bets model's out-of-fold predictions (Phase 8) and a final stacked model trained
@@ -62,7 +62,8 @@ EXTERNAL = {
     "Fusion NN: attention": "fusion_attention_oof.parquet",
 }
 
-## ----------------------------------------------------------------- INPUTS
+# ---------------------------------------------------------------- INPUTS
+
 
 def load_inputs(cfg: dict[str, Any]) -> pl.DataFrame:
     """Processed table + text/photo outputs of Phase 4-5, one row per listing."""
@@ -70,7 +71,6 @@ def load_inputs(cfg: dict[str, Any]) -> pl.DataFrame:
     for f, how in {"text_oof.parquet": "Phase 4 (Colab)", "image_oof.parquet": "Phase 5"}.items():
         if not (preds / f).exists():
             raise FileNotFoundError(f"data/predictions/{f} is missing: run {how}")
-
 
     df = pl.read_parquet(cfg["paths"]["processed"])
     text = pl.read_parquet(preds / "text_oof.parquet").select(
@@ -89,11 +89,12 @@ def load_inputs(cfg: dict[str, Any]) -> pl.DataFrame:
         )
     return out
 
+
 def extra_features(
     df: pl.DataFrame, train_rows: np.ndarray, inputs: list[str], k: int, seed: int
 ) -> tuple[np.ndarray, list[str], dict[str, Any]]:
     """Stacking features for all rows; principal components fit on ``train_rows`` only.
-    
+
     Returns (matrix, column names, fitted state for serving).
     """
     cols, names, state = [], [], {}
@@ -102,8 +103,7 @@ def extra_features(
         pca = PCA(n_components=k, random_state=seed).fit(t[train_rows])
         cols += [df["text_pred_log"].to_numpy()[:, None], pca.transform(t)]
         names += ["text_pred_log", *[f"text_pc{i + 1}" for i in range(k)]]
-        state["text_pca"] = {"mean": pca.mean_.tolist(), "components":
-        pca.components_.tolist()}
+        state["text_pca"] = {"mean": pca.mean_.tolist(), "components": pca.components_.tolist()}
 
     if "image" in inputs:
         x, has = image_matrix(df)
@@ -117,13 +117,13 @@ def extra_features(
             pcs,
             df.select(prompts).to_numpy().astype(float),
         ]
-        names += ["img_pred_log", "has_image", *[f"img_pc{i + 1}" for i in range(k)],
-                *prompts]
+        names += ["img_pred_log", "has_image", *[f"img_pc{i + 1}" for i in range(k)], *prompts]
         state["image_pca"] = {"mean": pca.mean_.tolist(), "components": pca.components_.tolist()}
         state["prompts"] = prompts
     if not cols:
         return np.zeros((df.height, 0)), [], state
     return np.hstack(cols).astype(np.float64), names, state
+
 
 def fit_lgbm(
     x: np.ndarray,
@@ -134,7 +134,7 @@ def fit_lgbm(
     seed: int,
     rounds: int | None = None,
 ) -> lgb.Booster:
-    """LightGBM with the baseline settings; early stopping on 10% of the 
+    """LightGBM with the baseline settings; early stopping on 10% of the
     TRAINING rows."""
     b = cfg["baseline"]
     if rounds:
@@ -142,8 +142,7 @@ def fit_lgbm(
         return lgb.train(lgb_params(cfg), data, num_boost_round=rounds)
     inner = np.random.default_rng(seed).random(len(y)) < b["inner_valid_frac"]
     train = lgb.Dataset(
-        x[~inner], y[~inner], feature_name=names, categorical_feature=cats,
-        free_raw_data=False
+        x[~inner], y[~inner], feature_name=names, categorical_feature=cats, free_raw_data=False
     )
     valid = lgb.Dataset(x[inner], y[inner], reference=train)
     return lgb.train(
@@ -153,6 +152,7 @@ def fit_lgbm(
         valid_sets=[valid],
         callbacks=[lgb.early_stopping(b["early_stopping_rounds"], verbose=False)],
     )
+
 
 def stacked_cv(
     df: pl.DataFrame, cfg: dict, inputs: list[str]
@@ -193,13 +193,15 @@ def stacked_cv(
     imp = imp.with_columns((100 * pl.col("gain") / pl.col("gain").sum()).round(2).alias("gain_pct"))
     return pred, imp.sort("gain", descending=True).select("feature", "gain_pct"), best_iters
 
-## ----------------------------------------------------------------------------------------- STATISTICS
+
+# ---------------------------------------------------------------- statistics
+
 
 def paired_bootstrap(
     y: np.ndarray, pa: np.ndarray, pb: np.ndarray, n_boot: int, seed: int
 ) -> dict[str, Any]:
     """Change from model A to model B (B - A) with 95% CI and two-sided p-value.
-    
+
     Each bootstrap sample resamples listings and scores BOTH models on the same listings,
     so the comparison is paired. Negative MdAPE/MAE change = B is better.
     """
@@ -210,7 +212,7 @@ def paired_bootstrap(
     diffs = {
         "mdape_pct": 100 * (np.median(ape_b[idx], axis=1) - np.median(ape_a[idx], axis=1)),
         "mae_usd": ae_b[idx].mean(axis=1) - ae_a[idx].mean(axis=1),
-        "within_10_pct": 100 
+        "within_10_pct": 100
         * ((ape_b[idx] <= 0.1).mean(axis=1) - (ape_a[idx] <= 0.1).mean(axis=1)),
     }
     point = {
@@ -229,6 +231,7 @@ def paired_bootstrap(
         }
     return out
 
+
 def paired_ttest(y: np.ndarray, pa: np.ndarray, pb: np.ndarray) -> float:
     """p-value of a paired t-test on per-listing absolute log errors."""
     ea = np.abs(np.log1p(pa) - np.log1p(y))
@@ -236,6 +239,7 @@ def paired_ttest(y: np.ndarray, pa: np.ndarray, pb: np.ndarray) -> float:
     if np.allclose(ea, eb):
         return 1.0
     return float(stats.ttest_rel(eb, ea).pvalue)
+
 
 def holm(pvalues: list[float]) -> list[float]:
     """Holm-Bonferroni adjusted p-values (controls false `wins` across manu comparisons)"""
@@ -247,6 +251,7 @@ def holm(pvalues: list[float]) -> list[float]:
         running = max(running, min(1.0, (m - rank) * pvalues[i]))
         adjusted[i] = running
     return adjusted.tolist()
+
 
 def fold_wins(df: pl.DataFrame, a: str, b: str) -> str:
     """'k/5': folds where model B has a lower MdAPE than Model A."""
@@ -261,7 +266,7 @@ def fold_wins(df: pl.DataFrame, a: str, b: str) -> str:
 
 
 def compare(df: pl.DataFrame, pairs: list[tuple[str, str, str]], cfg: dict) -> pl.DataFrame:
-    """Significance table for (question, model A, model B) pairs present in ``df`` """
+    """Significance table for (question, model A, model B) pairs present in ``df``"""
     e = cfg["evaluate"]
     y = df["price"].to_numpy()
     rows = []
@@ -276,7 +281,7 @@ def compare(df: pl.DataFrame, pairs: list[tuple[str, str, str]], cfg: dict) -> p
                 "B": b,
                 "mdape_change": r["mdape_pct"]["change"],
                 "mdape_95ci": f"[{r['mdape_pct']['ci_low']}, {r['mdape_pct']['ci_high']}]",
-                "p_bootstrap": r['mdape_pct']["p"],
+                "p_bootstrap": r["mdape_pct"]["p"],
                 "mae_change": round(r["mae_usd"]["change"], 2),
                 "within10_change": round(r["within_10_pct"]["change"], 2),
                 "p_ttest_logerr": paired_ttest(y, df[a].to_numpy(), df[b].to_numpy()),
@@ -301,6 +306,7 @@ def compare(df: pl.DataFrame, pairs: list[tuple[str, str, str]], cfg: dict) -> p
         for c in ("p_bootstrap", "p_ttest_logerr", "p_holm")
     )
 
+
 def fmt_p(p: float) -> str:
     return "<0.001" if p < 0.001 else f"{p:.3f}"
 
@@ -312,7 +318,9 @@ def model_ci(y: np.ndarray, pred: np.ndarray, n_boot: int, seed: int) -> tuple[f
     meds = 100 * np.median(ape[idx], axis=1)
     return float(np.percentile(meds, 2.5)), float(np.percentile(meds, 97.5))
 
-## ---------------------------------------------------------------------------------- FINAL MODEL
+
+# ---------------------------------------------------------------- FINAL MODEL
+
 
 def train_final(df: pl.DataFrame, cfg: dict, inputs: list[str], rounds: int, out: Path) -> None:
     """Best stacked model on all rows + everything needed to rebuild its inputs (web app)."""
@@ -327,18 +335,17 @@ def train_final(df: pl.DataFrame, cfg: dict, inputs: list[str], rounds: int, out
         df["log_price"].to_numpy()[rows],
         fb.feature_names + names,
         fb.categorical_names,
-        cfg, 
+        cfg,
         cfg["seed"],
         rounds=rounds,
-    )   
+    )
     out.mkdir(parents=True, exist_ok=True)
     booster.save_model(str(out / "stacked_lightgbm.txt"))
     if "image" in inputs:
         xi, has = image_matrix(df)
         ridge = RidgeCV(alphas=[float(a) for a in cfg["image_model"]["probe_alphas"]])
         ridge.fit(xi[has], df["log_price"].to_numpy()[has])
-        state['image_ridge'] = {"coef": ridge.coef_.tolist(), "intercept":
-                                float(ridge.intercept_)}
+        state["image_ridge"] = {"coef": ridge.coef_.tolist(), "intercept": float(ridge.intercept_)}
     meta = {
         "inputs": inputs,
         "features": fb.feature_names + names,
@@ -349,20 +356,22 @@ def train_final(df: pl.DataFrame, cfg: dict, inputs: list[str], rounds: int, out
     (out / "stacked_features.json").write_text(json.dumps(meta), encoding="utf-8")
 
 
-## ---------------------------------------------------------------------------------- REPORT
+# ---------------------------------------------------------------- REPORT
 def plot_ablation(board: pl.DataFrame, path: Path) -> str:
     t = board.sort("mdape_pct", descending=True)
     fig, ax = plt.subplots(figsize=(8, 0.5 * t.height + 1.5))
     err = np.array([t["mdape_pct"] - t["ci_low"], t["ci_high"] - t["mdape_pct"]])
     ax.barh(t["model"].to_list(), t["mdape_pct"].to_numpy(), xerr=err, color="#3b6ea8", capsize=3)
-    ax.set(xlabel="MdAPE % (lower is better), 95% bootstrap interval",
-           title="All models, same listings",
+    ax.set(
+        xlabel="MdAPE % (lower is better), 95% bootstrap interval",
+        title="All models, same listings",
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
     fig.savefig(path, dpi=110)
     plt.close(fig)
     return f"figures/{path.name}"
+
 
 def write_report(path: Path, s: dict, t: dict[str, pl.DataFrame], fig: str) -> None:
     lines = [
@@ -451,9 +460,10 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
         ("Table + text + photo vs table", base, "Stacked LightGBM: tab+text+image"),
         ("Fusion NN (concatenation) vs baseline", ref, "Fusion NN concatenation"),
         ("Fusion NN (attention) vs baseline", ref, "Fusion NN: attention"),
-        ("Attention vs concatenation (architecture)",
-         "Fusion NN: concatenation",
-         "Fusion NN:attention",
+        (
+            "Attention vs concatenation (architecture)",
+            "Fusion NN: concatenation",
+            "Fusion NN:attention",
         ),
         (
             "Stacked (all inputs) vs fusion NN (concatenation)",
@@ -475,8 +485,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
             ).select("market", pl.col("mdape_pct").alias("best_mdape")),
             on="market",
         )
-        .with_columns((pl.col("best_mdape") - 
-                       pl.col("baseline_mdape")).round(2).alias("change"))
+        .with_columns((pl.col("best_mdape") - pl.col("baseline_mdape")).round(2).alias("change"))
         .sort("rows", descending=True)
     )
 
@@ -527,11 +536,10 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
     with mlflow_run(cfg, "evaluation") as mlflow:
         if mlflow is not None:
             mlflow.log_params(
-                {"bootstrap": e["bootstrap"], "pca_components": e["pca_components"],
-                 "best": best}
+                {"bootstrap": e["bootstrap"], "pca_components": e["pca_components"], "best": best}
             )
             for row in board.iter_rows(named=True):
-                key = "".join(ch if ch.isalnum() else "_" for ch in row['model']).strip("_").lower()
+                key = "".join(ch if ch.isalnum() else "_" for ch in row["model"]).strip("_").lower()
                 mlflow.log_metric(f"mdape_{key}", row["mdape_pct"])
             for p in (
                 reports / "evaluation.md",

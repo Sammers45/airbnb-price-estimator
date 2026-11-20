@@ -6,13 +6,13 @@ Usage:
 Phase 9 monitoring found training-serving skew. The web form asks about ten fields and
 fills the rest (review scores, host details, ...) with the market's typical value. Prices
 predicted that way are less accurate, but the Phase 8 ranges sized for predictions made
-with the full listing data, so they were too narrow, and the difficulty model, seeing 
+with the full listing data, so they were too narrow, and the difficulty model, seeing
 'typical' inputs, sent almost nothing to review.
 
 Fix: measure the errors the service really makes on form-only input, out of fold, and size the
 ranges, and the review rule on THOSE errors. FOr each fold k:
     1. train the LigthGBM baseline on the other folds;
-    2. rebuild each fold-k listing exactly as the web form sends it (serve.listing_row), with 
+    2. rebuild each fold-k listing exactly as the web form sends it (serve.listing_row), with
        typical values taken from the other folds only;
     3. predict -> out-of-fold form-only predictions.
 Phase 8's calibrator is then fit on these predictions and saved to models/intervals_form/
@@ -56,7 +56,7 @@ def cross_validate_form(df: pl.DataFrame, cfg: dict[str, Any]) -> pl.DataFrame:
     parts = []
     for k in sorted(df["fold"].unique().to_list()):
         train = df.filter(pl.col("fold") != k)
-        form = build_form(cfg, train)  
+        form = build_form(cfg, train)
         fit = drop_outliers(train, cfg)
         fb = FeatureBuilder().fit(fit)
         booster = fit_booster(fb.matrix(fit), fit["log_price"].to_numpy(), fb, cfg, cfg["seed"] + k)
@@ -96,7 +96,7 @@ def summary_row(name: str, oof: pl.DataFrame, k: str) -> dict[str, Any]:
     big = np.abs(p - y) / y > 0.5
     auto = price_metrics(y[~review], p[~review]) if (~review).any() else {"mdape_pct": None}
     return {
-        "ranges": name, 
+        "ranges": name,
         f"coverage_{k}_pct": cov["coverage_pct"],
         "coverage_hard_third": cov["coverage_hard_third"],
         "median_width_pct": cov["median_width_pct"],
@@ -143,7 +143,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
     form = cross_validate_form(df, cfg)
     k = f"{round(cfg['intervals']['coverage_levels'][0] * 100)}"
 
-    cal = form.drop("pred_full") # never a feature of the difficulty model
+    cal = form.drop("pred_full")  # never a feature of the difficulty model
     after = iv.cross_validate(cal, cfg)
     full = iv.load_inputs(cfg)
     before = before_fix(full, cal, cfg)
@@ -181,7 +181,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
             mlflow.log_metric("mdape_form_pct", s["mdape_form_pct"])
             for name in ("before", "after"):
                 mlflow.log_metric(f"coverage_{name}", r[name][f"coverage_{k}_pct"])
-                mlflow.log_metric(f"review_pct_{name}", r[name][f"review_pct"])
+                mlflow.log_metric(f"review_pct_{name}", r[name]["review_pct"])
             mlflow.log_artifact(str(reports / "form_ranges.md"))
 
     print(f"MDAPE: full data {s['mdape_full_pct']}%, form only {s['mdape_form_pct']}%")

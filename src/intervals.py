@@ -42,8 +42,9 @@ from src.metrics import price_metrics
 from src.utils import load_config, mlflow_run, set_seed, setup_logging
 
 log = logging.getLogger(__name__)
-EPS = 0.01 # 1% error floor, so log(|error|) is defined for near-perfect predictions
+EPS = 0.01  # 1% error floor, so log(|error|) is defined for near-perfect predictions
 OWN_COLUMNS = ["pred", "pred_log", "resid"]
+
 
 ## ------------------------------------------------------------------------- INPUTS
 def load_inputs(cfg: dict[str, Any]) -> pl.DataFrame:
@@ -58,11 +59,13 @@ def load_inputs(cfg: dict[str, Any]) -> pl.DataFrame:
         pl.col("pred").log1p().alias("pred_log"),
     ).with_columns((pl.col("log_price") - pl.col("pred_log")).alias("resid"))
 
-def  conformal_q(scores: np.ndarray, level: float) -> float:
+
+def conformal_q(scores: np.ndarray, level: float) -> float:
     """Split-conformal quantile with the finite-sample correction ceiL((n + 1) * level) / n."""
     s = np.sort(np.asarray(scores, dtype=float))
     k = math.ceil((len(s) + 1) * level)
     return float(s[min(k, len(s)) - 1])
+
 
 def band(pred_log: np.ndarray, half: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Log-scale centre +/- half width -> (low, high) prices in USD."""
@@ -125,10 +128,9 @@ class Calibrator:
             "width_threshold": self.width_threshold,
             "market_counts": self.market_counts,
             "min_market_rows": self.min_market_rows,
-            "feature_builder": self.fb.to_dict(),            
+            "feature_builder": self.fb.to_dict(),
         }
         (out / "intervals.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
-
 
     @classmethod
     def load(cls, out: Path) -> Calibrator:
@@ -144,6 +146,7 @@ class Calibrator:
             m["min_market_rows"],
         )
 
+
 def calibrate(df: pl.DataFrame, cfg: dict[str, Any], seed: int) -> Calibrator:
     """Fit the difficulty model on one part of ``df`` and the band sizes on the rest."""
     c = cfg["intervals"]
@@ -155,7 +158,7 @@ def calibrate(df: pl.DataFrame, cfg: dict[str, Any], seed: int) -> Calibrator:
     rounds = params.pop("num_boost_round")
     x = np.hstack([fb.matrix(fit_df), fit_df["pred_log"].to_numpy()[:, None]])
     data = lgb.Dataset(
-        x, 
+        x,
         np.log(np.abs(fit_df["resid"].to_numpy()) + EPS),
         feature_name=[*fb.feature_names, "pred_log"],
         categorical_feature=fb.categorical_names,
@@ -164,7 +167,7 @@ def calibrate(df: pl.DataFrame, cfg: dict[str, Any], seed: int) -> Calibrator:
 
     counts = df["market"].value_counts()
     cb = Calibrator(
-        fb, 
+        fb,
         booster,
         list(c["coverage_levels"]),
         {},
@@ -182,8 +185,9 @@ def calibrate(df: pl.DataFrame, cfg: dict[str, Any], seed: int) -> Calibrator:
     lo, hi = band(cal_df["pred_log"].to_numpy(), cb.q_adaptive[k] * sig)
     cb.width_threshold = float(
         np.quantile((hi - lo) / cal_df["pred"].to_numpy(), 1 - c["review_rate"])
-    ) 
-    return cb   
+    )
+    return cb
+
 
 def cross_validate(df: pl.DataFrame, cfg: dict[str, Any]) -> pl.DataFrame:
     """Out-of-fold ranges: each fold is calibrated on the other folds only."""
@@ -200,6 +204,7 @@ def cross_validate(df: pl.DataFrame, cfg: dict[str, Any]) -> pl.DataFrame:
 ## ------------------------------------------------------------------------------------- TABLES
 def covered(lo: str, hi: str) -> pl.Expr:
     return (pl.col("price") >= pl.col(lo)) & (pl.col("price") <= pl.col(hi))
+
 
 def coverage_table(oof: pl.DataFrame, levels: list[float]) -> pl.DataFrame:
     """Target vs achieved coverage and rnage width, overall and for easy / hard listings."""
@@ -222,7 +227,7 @@ def coverage_table(oof: pl.DataFrame, levels: list[float]) -> pl.DataFrame:
                     "coverage_easy_third": round(100 * cov[easy.to_numpy()].mean(), 2),
                     "coverage_hard_third": round(100 * cov[hard.to_numpy()].mean(), 2),
                     "median_width_pct": round(100 * float(np.median(width)), 1),
-                    "median_width_usd": round(float((oof[hi] - oof[lo]).median()), 2), 
+                    "median_width_usd": round(float((oof[hi] - oof[lo]).median()), 2),
                 }
             )
         return pl.DataFrame(rows)
@@ -256,6 +261,7 @@ def routing_table(oof: pl.DataFrame, k: str) -> pl.DataFrame:
         )
     return pl.DataFrame(rows)
 
+
 def by_market(oof: pl.DataFrame, k: str) -> pl.DataFrame:
     return (
         oof.with_columns(
@@ -273,6 +279,7 @@ def by_market(oof: pl.DataFrame, k: str) -> pl.DataFrame:
         )
         .sort("rows", descending=True)
     )
+
 
 def error_by_width(oof: pl.DataFrame) -> pl.DataFrame:
     """Do wider ranges really mean bigger errors? Actual error per decile of range width."""
@@ -298,15 +305,15 @@ def plot(err: pl.DataFrame, mk: pl.DataFrame, k: str, target: float, path: Path)
     fig, (a, b) = plt.subplots(1, 2, figsize=(12, 4.5))
     a.plot(err["width_decile"], err["median_actual_error_pct"], "o-", color="#3b6ea8")
     a.set(
-        xlabel = "Range width decile (1 = narrowest)",
-        ylabel = "Median actual error %",
-        title = "Wider range = bigger real errors",
+        xlabel="Range width decile (1 = narrowest)",
+        ylabel="Median actual error %",
+        title="Wider range = bigger real errors",
     )
     m = mk.filter(pl.col("rows") >= 30)
     y = np.arange(m.height)
     b.barh(y - 0.2, m[f"coverage_constant_{k}"], 0.4, label="constant", color="#bbbbbb")
     b.barh(y + 0.2, m[f"coverage_adaptive_{k}"], 0.4, label="adaptive", color="#3b6ea8")
-    b.axvline(target * 100, color = "black", ls="--", lw=1, label="target")
+    b.axvline(target * 100, color="black", ls="--", lw=1, label="target")
     b.set_yticks(y, m["market"].to_list())
     b.set(xlabel=f"Coverage of the {k}% range", title="Coverage by market", xlim=(50, 100))
     b.legend(loc="lower right")
@@ -315,6 +322,7 @@ def plot(err: pl.DataFrame, mk: pl.DataFrame, k: str, target: float, path: Path)
     fig.savefig(path, dpi=120)
     plt.close(fig)
     return f"figures/{path.name}"
+
 
 def write_report(path: Path, s: dict[str, Any], t: dict[str, pl.DataFrame], fig: str) -> None:
     k = s["route_level"]
@@ -354,6 +362,7 @@ def write_report(path: Path, s: dict[str, Any], t: dict[str, pl.DataFrame], fig:
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
+
 def run(cfg: dict[str, Any]) -> dict[str, Any]:
     set_seed(cfg["seed"])
     paths, c = cfg["paths"], cfg["intervals"]
@@ -361,13 +370,12 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
     df = load_inputs(cfg)
     best_file = preds_dir / "best_model.json"
     source = (
-        json.loads(best_file.read_text(encoding="utf-8"))["best"] if best_file.exists() else
-        "best"
+        json.loads(best_file.read_text(encoding="utf-8"))["best"] if best_file.exists() else "best"
     )
     log.info("Ranges for %d listings around: %s", df.height, source)
 
     oof = cross_validate(df, cfg)
-    k = f"{round(c["coverage_levels"][0] * 100)}"
+    k = f"{round(c['coverage_levels'][0] * 100)}"
     tables = {
         "coverage": coverage_table(oof, c["coverage_levels"]),
         "error_by_width": error_by_width(oof),
@@ -420,7 +428,6 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
                 mlflow.log_metric(key, summary[key])
             mlflow.log_artifact(str(reports / "intervals.md"))
 
-
     for (lv, method), r in cov.items():
         print(
             f"{lv}% range, {method:<8} coverage {r['coverage_pct']:>6}%  "
@@ -438,12 +445,14 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
     print(f"Report: {reports / 'intervals.md'}")
     return summary
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 8a: price ranges and review routing")
     parser.add_argument("--config", default="config.yaml")
     args = parser.parse_args()
     setup_logging()
     run(load_config(args.config))
+
 
 if __name__ == "__main__":
     main()

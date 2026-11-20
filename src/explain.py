@@ -7,8 +7,9 @@ Usage:
    (``pred_contrib=True``), the same algorithm as the ``shap`` package. On the log scale, the values
    add up exactly to the prediction, so each one is a price multipler:
    effect % = exp(value) - 1.
-2. Integrated Gradients (Captum) for the Phase 6 fusion network (concatenation). The 
-network predicts a CORRECTION to the LightGBM price; IG splits that correction between the table, the description 
+2. Integrated Gradients (Captum) for the Phase 6 fusion network (concatenation). The
+network predicts a CORRECTION to the LightGBM price; IG splits that correction between the table,
+the description
 and the photo, relative to an "average listing" baseline.
 """
 
@@ -30,11 +31,12 @@ import polars as pl
 
 from src.baseline import FeatureBuilder
 from src.data import md
-from src.utils import load_config, mlflow_run, setup_logging, set_seed
+from src.utils import load_config, mlflow_run, set_seed, setup_logging
 
 log = logging.getLogger(__name__)
 
-## ------------------------------------------------------------------------------ SHAP
+
+# ---------------------------------------------------------------- SHAP
 def load_baseline(models: Path) -> tuple[lgb.Booster, FeatureBuilder]:
     path = models / "baseline_lightgbm.txt"
     if not path.exists():
@@ -42,14 +44,17 @@ def load_baseline(models: Path) -> tuple[lgb.Booster, FeatureBuilder]:
     fb = json.loads((models / "baseline_features.json").read_text(encoding="utf-8"))
     return lgb.Booster(model_file=str(path)), FeatureBuilder.from_dict(fb)
 
+
 def shap_values(booster: lgb.Booster, x: np.ndarray) -> tuple[np.ndarray, float]:
     """(per-feature SHAP values on the log scale, expected value.)"""
     contrib = booster.predict(x, pred_contrib=True)
     return contrib[:, :-1], float(contrib[0, -1])
 
+
 def effect_pct(v: np.ndarray | float) -> np.ndarray | float:
     """Log-Scale SHAP value -> % change in (price + 1)."""
     return 100 * (np.exp(v) - 1)
+
 
 def show_value(fb: FeatureBuilder, name: str, v: float) -> str:
     if np.isnan(v):
@@ -58,8 +63,9 @@ def show_value(fb: FeatureBuilder, name: str, v: float) -> str:
         return fb.categories[name][int(v)]
     return f"{v:g}" if abs(v) >= 0.01 else f"{v:.3g}"
 
+
 def explain_listing(
-        booster: lgb.Booster, fb: FeatureBuilder, row: pl.DataFrame, top: int = 6
+    booster: lgb.Booster, fb: FeatureBuilder, row: pl.DataFrame, top: int = 6
 ) -> dict[str, Any]:
     """Explanation of one listing."""
     x = fb.matrix(row)
@@ -78,6 +84,7 @@ def explain_listing(
         ],
     }
 
+
 def shap_table(phi: np.ndarray, x: np.ndarray, fb: FeatureBuilder) -> pl.DataFrame:
     """Global importance: average size of each feature's effect, and its direction."""
     rows = []
@@ -86,7 +93,7 @@ def shap_table(phi: np.ndarray, x: np.ndarray, fb: FeatureBuilder) -> pl.DataFra
         if name in fb.categories:
             direction = "depends on the category"
         else:
-            ok = ~np.isnan(x[:, j])            
+            ok = ~np.isnan(x[:, j])
             rho = (
                 np.corrcoef(np.argsort(np.argsort(x[ok, j])), phi[ok, j])[0, 1]
                 if ok.sum() > 2 and np.std(x[ok, j]) > 0 and np.std(phi[ok, j]) > 0
@@ -105,6 +112,7 @@ def shap_table(phi: np.ndarray, x: np.ndarray, fb: FeatureBuilder) -> pl.DataFra
         )
     return pl.DataFrame(rows).sort("mean_abs_shap", descending=True)
 
+
 def plot_shap(phi: np.ndarray, x: np.ndarray, names: list[str], top: int, path: Path) -> str:
     """Beeswarm-style chart: one dot per listing, colour = feature value (low -> high)."""
     order = np.argsort(-np.abs(phi).mean(axis=0))[:top][::-1]
@@ -118,16 +126,16 @@ def plot_shap(phi: np.ndarray, x: np.ndarray, names: list[str], top: int, path: 
         ax.scatter(
             effect_pct(phi[:, j]),
             y + rng.uniform(-0.3, 0.3, len(v)),
-            c = colour,
-            cmap = "coolwarm",
-            s = 4,
-            alpha = 0.6,
+            c=colour,
+            cmap="coolwarm",
+            s=4,
+            alpha=0.6,
         )
     ax.axvline(0, color="black", lw=0.8)
     ax.set_yticks(range(len(order)), [names[j] for j in order])
     ax.set(
-        xlabel = "Effect on price, % (red = high feature value, blue = low)",
-        title = "What drives the LightGBM price (SHAP)",
+        xlabel="Effect on price, % (red = high feature value, blue = low)",
+        title="What drives the LightGBM price (SHAP)",
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
@@ -135,7 +143,10 @@ def plot_shap(phi: np.ndarray, x: np.ndarray, names: list[str], top: int, path: 
     plt.close(fig)
     return f"figures/{path.name}"
 
-## --------------------------------------------------------------------------------------- Integrated Gradients
+
+# ---------------------------------------------------------------- Integrated Gradients
+
+
 def integrated_gradients(cfg: dict[str, Any]) -> dict[str, Any] | None:
     """Split the fusion network's correction between table, text and photo. None if not trained."""
     model_dir = Path(cfg["paths"]["models"]) / "fusion_concat"
@@ -160,22 +171,20 @@ def integrated_gradients(cfg: dict[str, Any]) -> dict[str, Any] | None:
     rows = np.random.default_rng(cfg["seed"]).permutation(df.height)[: e["ig_rows"]]
     s = a.take(rows)
 
-    def forward(num, text, img, cat, has_img, base): 
+    def forward(num, text, img, cat, has_img, base):
         return net(fu.Arrays(num, cat, text, img, has_img, base, base))[0]
 
     inputs = (s.num, s.text, s.img)
-    baselines = tuple(
-        t.mean(dim=0, keepdim=True) for t in (a.num, a.text, a.img)
-    ) 
+    baselines = tuple(t.mean(dim=0, keepdim=True) for t in (a.num, a.text, a.img))
     attr, delta = IntegratedGradients(forward).attribute(
         inputs,
         baselines=baselines,
         additional_forward_args=(s.cat, s.has_img, s.base),
         n_steps=e["ig_steps"],
-        return_convergence_delta=True
+        return_convergence_delta=True,
     )
-    sd = meta["target_std"] # standardized -> log-price units
-    # Each input's net push on the price 
+    sd = meta["target_std"]  # standardized -> log-price units
+    # Each input's net push on the price
     groups = ("table", "text", "photo")
     size = {
         m: (t.sum(dim=1).abs() * sd).detach().numpy() for m, t in zip(groups, attr, strict=True)
@@ -213,7 +222,7 @@ def integrated_gradients(cfg: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-## --------------------------------------------------------------------------------- REPORT
+# ---------------------------------------------------------------- REPORT
 def write_report(path: Path, s: dict[str, Any], t: dict[str, Any], fig: str) -> None:
     lines = [
         "# Explanations: why the model predicts this price1",
@@ -229,7 +238,7 @@ def write_report(path: Path, s: dict[str, Any], t: dict[str, Any], fig: str) -> 
         "",
         f"![shap]({fig})",
         "",
-        "## 2. Example listings, explained one by one",       
+        "## 2. Example listings, explained one by one",
     ]
     for ex in t["examples"]:
         lines += [
@@ -237,7 +246,7 @@ def write_report(path: Path, s: dict[str, Any], t: dict[str, Any], fig: str) -> 
             f"**{ex['title']}**: actual ${ex['actual']}, predicted ${ex['predicted_price']} "
             f"(typical ${ex['typical_price']})",
             "",
-            md(pl.DataFrame(ex['reasons'])),
+            md(pl.DataFrame(ex["reasons"])),
         ]
     lines += ["", "## 3. What the fusion network adds (Integrated Gradients, Captum)"]
     ig = t["ig"]
@@ -269,8 +278,9 @@ def write_report(path: Path, s: dict[str, Any], t: dict[str, Any], fig: str) -> 
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
+
 def run(cfg: dict[str, Any]) -> dict[str, Any]:
-    set_seed(cfg['seed'])
+    set_seed(cfg["seed"])
     paths, e = cfg["paths"], cfg["explain"]
     reports = Path(paths["reports"])
     booster, fb = load_baseline(Path(paths["models"]))
@@ -323,9 +333,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
 
     print("Top features (SHAP):")
     for r in table.head(8).iter_rows(named=True):
-        print(
-            f"  {r['feature']:<26} typical effect {r['typical_effect_pct']:>5}% {r['direction']}"
-        )
+        print(f"  {r['feature']:<26} typical effect {r['typical_effect_pct']:>5}% {r['direction']}")
     if ig is not None:
         r = ig["shares"].row(0, named=True)
         print(
@@ -334,6 +342,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
         )
     print(f"Report: {reports / 'explain.md'}")
     return summary
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 8b: SHAP and Integrated Gradients")

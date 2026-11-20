@@ -6,15 +6,15 @@ made with ``openai/clip-vit-base-patch32``. This module:
         verify  Loads the same CLIP model, embeds ~40 real listing photos and checks they
                 match the dataset's vectors (so the web app can embed uploads the same way).
                 Also embeds the zero-shot text prompts from config.yaml.
-        train   Image-only price model (ridge regression on the 512-d vector) on the 
+        train   Image-only price model (ridge regression on the 512-d vector) on the
                 Phase 1 folds, plus readable "prompt scores" such as how much a photo looks
                 like "a luxurious interior" or "a small, cramped room".
-                
+
 Usage:
     python -m src.image_model verify    # downloads CLIP (~600 MB) once, ~2 minutes
     python -m src.image_model train     # ~1 minute
-    
-Listings without a photo vector keep ``has_image = 0`` and empty image columns; the 
+
+Listings without a photo vector keep ``has_image = 0`` and empty image columns; the
 fusion model (Phase 6) learns to ignore them.
 """
 
@@ -98,9 +98,10 @@ def image_matrix(df: pl.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     x[rows] = unit(np.array(df["image_embeddings"].gather(rows).to_list(), dtype=np.float32))
     return x, has
 
+
 def prompt_scores(x: np.ndarray, prompt_vecs: np.ndarray, names: list[str]) -> np.ndarray:
     """How much each photo matches each prompt, relative to that photo's average match.
-    
+
     Raw CLIP similaritites differ a lot from photo to photo; substracting the photo's mean
     over all prompts leaves "more like X than like the other prompts".
     """
@@ -123,11 +124,11 @@ def load_prompts(cfg: dict) -> tuple[list[str], np.ndarray] | None:
 
 ## ------------------------------------------------------------------------------- VERIFY
 
+
 def download_photo(url: str, timeout: float) -> Any | None:
     """Fetch one photo as an RGB PIL image; None on any failure."""
     import requests
     from PIL import Image
-
 
     try:
         r = requests.get(url, timeout=timeout)
@@ -169,7 +170,7 @@ def verify(cfg: dict, encoder: Encoder | None = None, fetch=download_photo) -> d
         json.dumps(
             {"model": m["clip_model"], "prompts": m["prompts"], "vectors": vectors.tolist()}
         ),
-        encoding="utf-8"
+        encoding="utf-8",
     )
     c = np.array(cosines)
     result = {
@@ -238,7 +239,7 @@ def write_report(path: Path, s: dict, t: dict[str, pl.DataFrame], prompts: dict[
             f"**{'match' if v['matches'] else 'NO MATCH'}**. Uploaded photos in the web app "
             "can be embedded the same way."
             if v
-            else "Not run yet: `python -m src.image_model verify`." 
+            else "Not run yet: `python -m src.image_model verify`."
         ),
         "\n## 2. Image-only model (out-of-fold, listings with a photo, USD)",
         "Ridge regression on the photo vector, strength chosen inside each training fold. "
@@ -285,7 +286,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
     if prompts:
         names, vecs = prompts
         scores = prompt_scores(x, vecs, names)
-        scores[~has] = np.nan  
+        scores[~has] = np.nan
         oof = oof.with_columns(pl.Series(f"img_{n}", scores[:, i]) for i, n in enumerate(names))
     else:
         log.warning("No prompt vectors yet: run `python -m src.image_model verify` first.")
@@ -312,7 +313,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
         )
     verify_path = reports / "image_verify.json"
     summary = {
-        "clip_model": m['clip_model'],
+        "clip_model": m["clip_model"],
         "rows": df.height,
         "with_image": int(has.sum()),
         "with_image_pct": round(100 * float(has.mean()), 1),
@@ -323,7 +324,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
     }
     tables = {"overall": pl.DataFrame(rows), "by_market": metrics_by(sub, "market")}
     if prompts:
-        tables['prompts'] = prompt_correlations(oof, prompts[0])
+        tables["prompts"] = prompt_correlations(oof, prompts[0])
     with pl.Config(tbl_width_chars=1000, fmt_str_lengths=200):
         write_report(reports / "image_model.md", summary, tables, m["prompts"])
     (reports / "image_model_metrics.json").write_text(
@@ -348,8 +349,8 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
         f"on {summary['with_image']} listings. Report: {reports / 'image_model.md'}"
     )
     return summary
- 
- 
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 5 image model")
     parser.add_argument("step", choices=["verify", "train"])
@@ -358,7 +359,7 @@ def main() -> None:
     setup_logging()
     cfg = load_config(args.config)
     verify(cfg) if args.step == "verify" else run(cfg)
- 
- 
+
+
 if __name__ == "__main__":
     main()
