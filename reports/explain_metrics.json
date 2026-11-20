@@ -1,0 +1,255 @@
+{
+  "rows": 5555,
+  "typical_price": 76.06,
+  "shap_gap": 2.6645352591003757e-14,
+  "shap_top": 15,
+  "top_features": [
+    {
+      "feature": "room_type",
+      "mean_abs_shap": 0.2159,
+      "typical_effect_pct": 24.1,
+      "direction": "depends on the category"
+    },
+    {
+      "feature": "market",
+      "mean_abs_shap": 0.1831,
+      "typical_effect_pct": 20.1,
+      "direction": "depends on the category"
+    },
+    {
+      "feature": "accommodates",
+      "mean_abs_shap": 0.1367,
+      "typical_effect_pct": 14.6,
+      "direction": "higher = pricier"
+    },
+    {
+      "feature": "neighbourhood",
+      "mean_abs_shap": 0.1028,
+      "typical_effect_pct": 10.8,
+      "direction": "depends on the category"
+    },
+    {
+      "feature": "longitude",
+      "mean_abs_shap": 0.079,
+      "typical_effect_pct": 8.2,
+      "direction": "higher = cheaper"
+    },
+    {
+      "feature": "bedrooms",
+      "mean_abs_shap": 0.0624,
+      "typical_effect_pct": 6.4,
+      "direction": "higher = pricier"
+    },
+    {
+      "feature": "bathrooms",
+      "mean_abs_shap": 0.0564,
+      "typical_effect_pct": 5.8,
+      "direction": "higher = pricier"
+    },
+    {
+      "feature": "number_of_reviews",
+      "mean_abs_shap": 0.043,
+      "typical_effect_pct": 4.4,
+      "direction": "higher = cheaper"
+    },
+    {
+      "feature": "dist_centre_km",
+      "mean_abs_shap": 0.0399,
+      "typical_effect_pct": 4.1,
+      "direction": "higher = cheaper"
+    },
+    {
+      "feature": "minimum_nights",
+      "mean_abs_shap": 0.0362,
+      "typical_effect_pct": 3.7,
+      "direction": "higher = cheaper"
+    }
+  ],
+  "examples": [
+    {
+      "title": "Budget listing",
+      "actual": 25.61,
+      "typical_price": 76.06,
+      "predicted_price": 30.2,
+      "reasons": [
+        {
+          "feature": "room_type",
+          "value": "Private room",
+          "effect_pct": -21.3
+        },
+        {
+          "feature": "market",
+          "value": "Rio De Janeiro",
+          "effect_pct": -20.6
+        },
+        {
+          "feature": "neighbourhood",
+          "value": "Copacabana",
+          "effect_pct": -12.3
+        },
+        {
+          "feature": "accommodates",
+          "value": "2",
+          "effect_pct": -8.9
+        },
+        {
+          "feature": "longitude",
+          "value": "-43.1885",
+          "effect_pct": -6.2
+        },
+        {
+          "feature": "dist_centre_km",
+          "value": "0.916231",
+          "effect_pct": 6.0
+        }
+      ]
+    },
+    {
+      "title": "Typical listing",
+      "actual": 75.78,
+      "typical_price": 76.06,
+      "predicted_price": 72.56,
+      "reasons": [
+        {
+          "feature": "room_type",
+          "value": "Entire home/apt",
+          "effect_pct": 19.8
+        },
+        {
+          "feature": "market",
+          "value": "Sydney",
+          "effect_pct": 19.3
+        },
+        {
+          "feature": "accommodates",
+          "value": "2",
+          "effect_pct": -10.5
+        },
+        {
+          "feature": "number_of_reviews",
+          "value": "230",
+          "effect_pct": -9.1
+        },
+        {
+          "feature": "days_since_first_review",
+          "value": "2095",
+          "effect_pct": 9.2
+        },
+        {
+          "feature": "days_since_last_review",
+          "value": "3",
+          "effect_pct": -6.0
+        }
+      ]
+    },
+    {
+      "title": "Premium listing",
+      "actual": 199.0,
+      "typical_price": 76.06,
+      "predicted_price": 201.74,
+      "reasons": [
+        {
+          "feature": "market",
+          "value": "New York",
+          "effect_pct": 40.5
+        },
+        {
+          "feature": "neighbourhood",
+          "value": "Manhattan",
+          "effect_pct": 29.3
+        },
+        {
+          "feature": "longitude",
+          "value": "-73.9971",
+          "effect_pct": 19.3
+        },
+        {
+          "feature": "room_type",
+          "value": "Entire home/apt",
+          "effect_pct": 17.7
+        },
+        {
+          "feature": "number_of_reviews",
+          "value": "208",
+          "effect_pct": -7.5
+        },
+        {
+          "feature": "days_since_first_review",
+          "value": "2324",
+          "effect_pct": 7.7
+        }
+      ]
+    }
+  ],
+  "ig": {
+    "rows": 500,
+    "steps": 32,
+    "shares": [
+      {
+        "listings": "all",
+        "rows": 500,
+        "table_pct": 17.3,
+        "text_pct": 35.0,
+        "photo_pct": 47.7
+      },
+      {
+        "listings": "with photo",
+        "rows": 414,
+        "table_pct": 15.8,
+        "text_pct": 32.3,
+        "photo_pct": 51.8
+      },
+      {
+        "listings": "no photo",
+        "rows": 86,
+        "table_pct": 34.6,
+        "text_pct": 65.4,
+        "photo_pct": 0.0
+      }
+    ],
+    "top_table": [
+      {
+        "feature": "amen_family_kid_friendly",
+        "mean_abs_effect_pct": 0.46000000834465027
+      },
+      {
+        "feature": "amen_dryer",
+        "mean_abs_effect_pct": 0.41999998688697815
+      },
+      {
+        "feature": "amen_dishes_and_silverware",
+        "mean_abs_effect_pct": 0.3499999940395355
+      },
+      {
+        "feature": "amen_bed_linens",
+        "mean_abs_effect_pct": 0.3100000023841858
+      },
+      {
+        "feature": "amen_stove",
+        "mean_abs_effect_pct": 0.30000001192092896
+      },
+      {
+        "feature": "host_identity_verified",
+        "mean_abs_effect_pct": 0.2800000011920929
+      },
+      {
+        "feature": "beds",
+        "mean_abs_effect_pct": 0.25999999046325684
+      },
+      {
+        "feature": "number_of_reviews",
+        "mean_abs_effect_pct": 0.25999999046325684
+      },
+      {
+        "feature": "rs_cleanliness",
+        "mean_abs_effect_pct": 0.25999999046325684
+      },
+      {
+        "feature": "rs_value",
+        "mean_abs_effect_pct": 0.25999999046325684
+      }
+    ],
+    "correction_pct": 5.82,
+    "delta_ratio": 0.0
+  }
+}

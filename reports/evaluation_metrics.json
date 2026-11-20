@@ -1,0 +1,191 @@
+{
+  "rows": 5555,
+  "bootstrap": 2000,
+  "alpha": 0.05,
+  "n_comparisons": 7,
+  "best": "Fusion NN: concatenation",
+  "best_stacked": "Stacked LightGBM: tab+text+image",
+  "final_model": "models/stacked/stacked_lightgbm.txt",
+  "leaderboard": [
+    {
+      "model": "Fusion NN: concatenation",
+      "mae_usd": 45.15,
+      "mdape_pct": 26.42,
+      "within_10_pct": 20.11,
+      "within_20_pct": 39.51,
+      "r2_log": 0.6842,
+      "ci_low": 25.54,
+      "ci_high": 27.27
+    },
+    {
+      "model": "Fusion NN: attention",
+      "mae_usd": 45.31,
+      "mdape_pct": 26.84,
+      "within_10_pct": 20.05,
+      "within_20_pct": 39.19,
+      "r2_log": 0.6828,
+      "ci_low": 26.04,
+      "ci_high": 27.68
+    },
+    {
+      "model": "LightGBM baseline (Phase 3)",
+      "mae_usd": 45.86,
+      "mdape_pct": 26.98,
+      "within_10_pct": 19.87,
+      "within_20_pct": 38.27,
+      "r2_log": 0.6756,
+      "ci_low": 26.19,
+      "ci_high": 27.93
+    },
+    {
+      "model": "Stacked LightGBM: tab+text+image",
+      "mae_usd": 46.03,
+      "mdape_pct": 27.09,
+      "within_10_pct": 20.13,
+      "within_20_pct": 38.27,
+      "r2_log": 0.6723,
+      "ci_low": 26.43,
+      "ci_high": 28.07
+    },
+    {
+      "model": "Stacked LightGBM: tab+image",
+      "mae_usd": 46.24,
+      "mdape_pct": 27.28,
+      "within_10_pct": 19.66,
+      "within_20_pct": 38.72,
+      "r2_log": 0.6694,
+      "ci_low": 26.22,
+      "ci_high": 28.1
+    },
+    {
+      "model": "Stacked LightGBM: tab+text",
+      "mae_usd": 46.2,
+      "mdape_pct": 27.33,
+      "within_10_pct": 18.87,
+      "within_20_pct": 38.07,
+      "r2_log": 0.6708,
+      "ci_low": 26.57,
+      "ci_high": 28.15
+    },
+    {
+      "model": "Stacked LightGBM: tab",
+      "mae_usd": 46.0,
+      "mdape_pct": 27.35,
+      "within_10_pct": 19.44,
+      "within_20_pct": 38.85,
+      "r2_log": 0.6745,
+      "ci_low": 26.35,
+      "ci_high": 28.15
+    },
+    {
+      "model": "Text only (DistilBERT)",
+      "mae_usd": 58.71,
+      "mdape_pct": 36.25,
+      "within_10_pct": 14.82,
+      "within_20_pct": 29.2,
+      "r2_log": 0.4592,
+      "ci_low": 35.17,
+      "ci_high": 37.54
+    }
+  ],
+  "tests": [
+    {
+      "question": "Does text add to the table?",
+      "A": "Stacked LightGBM: tab",
+      "B": "Stacked LightGBM: tab+text",
+      "mdape_change": -0.016,
+      "mdape_95ci": "[-0.744, 0.758]",
+      "p_bootstrap": "0.945",
+      "mae_change": 0.2,
+      "within10_change": -0.58,
+      "p_ttest_logerr": "0.165",
+      "folds_B_wins": "3/5",
+      "p_holm": "1.000",
+      "verdict": "no siginificant difference"
+    },
+    {
+      "question": "Does the photo add on top of table + text?",
+      "A": "Stacked LightGBM: tab+text",
+      "B": "Stacked LightGBM: tab+text+image",
+      "mdape_change": -0.239,
+      "mdape_95ci": "[-0.797, 0.458]",
+      "p_bootstrap": "0.586",
+      "mae_change": -0.18,
+      "within10_change": 1.26,
+      "p_ttest_logerr": "0.054",
+      "folds_B_wins": "4/5",
+      "p_holm": "1.000",
+      "verdict": "no siginificant difference"
+    },
+    {
+      "question": "Does the photo add to the table alone?",
+      "A": "Stacked LightGBM: tab",
+      "B": "Stacked LightGBM: tab+image",
+      "mdape_change": -0.064,
+      "mdape_95ci": "[-0.869, 0.672]",
+      "p_bootstrap": "0.767",
+      "mae_change": 0.24,
+      "within10_change": 0.22,
+      "p_ttest_logerr": "0.525",
+      "folds_B_wins": "2/5",
+      "p_holm": "1.000",
+      "verdict": "no siginificant difference"
+    },
+    {
+      "question": "Table + text + photo vs table",
+      "A": "Stacked LightGBM: tab",
+      "B": "Stacked LightGBM: tab+text+image",
+      "mdape_change": -0.255,
+      "mdape_95ci": "[-1.0, 0.652]",
+      "p_bootstrap": "0.610",
+      "mae_change": 0.03,
+      "within10_change": 0.68,
+      "p_ttest_logerr": "0.889",
+      "folds_B_wins": "3/5",
+      "p_holm": "1.000",
+      "verdict": "no siginificant difference"
+    },
+    {
+      "question": "Fusion NN (attention) vs baseline",
+      "A": "LightGBM baseline (Phase 3)",
+      "B": "Fusion NN: attention",
+      "mdape_change": -0.142,
+      "mdape_95ci": "[-0.654, 0.418]",
+      "p_bootstrap": "0.695",
+      "mae_change": -0.55,
+      "within10_change": 0.18,
+      "p_ttest_logerr": "<0.001",
+      "folds_B_wins": "2/5",
+      "p_holm": "1.000",
+      "verdict": "no siginificant difference"
+    },
+    {
+      "question": "Stacked (all inputs) vs fusion NN (concatenation)",
+      "A": "Fusion NN: concatenation",
+      "B": "Stacked LightGBM: tab+text+image",
+      "mdape_change": 0.676,
+      "mdape_95ci": "[-0.012, 1.518]",
+      "p_bootstrap": "0.053",
+      "mae_change": 0.87,
+      "within10_change": 0.02,
+      "p_ttest_logerr": "0.002",
+      "folds_B_wins": "1/5",
+      "p_holm": "0.318",
+      "verdict": "no siginificant difference"
+    },
+    {
+      "question": "Best model vs baseline",
+      "A": "LightGBM baseline (Phase 3)",
+      "B": "Fusion NN: concatenation",
+      "mdape_change": -0.563,
+      "mdape_95ci": "[-1.125, -0.109]",
+      "p_bootstrap": "0.015",
+      "mae_change": -0.71,
+      "within10_change": 0.23,
+      "p_ttest_logerr": "<0.001",
+      "folds_B_wins": "2/5",
+      "p_holm": "0.105",
+      "verdict": "no siginificant difference"
+    }
+  ]
+}

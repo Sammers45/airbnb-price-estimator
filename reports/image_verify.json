@@ -1,0 +1,8 @@
+{
+  "clip_model": "openai/clip-vit-base-patch32",
+  "photos_tried": 41,
+  "photos_compared": 40,
+  "cosine_median": 0.9979,
+  "cosine_min": 0.9224,
+  "matches": true
+}

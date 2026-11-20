@@ -1,0 +1,32 @@
+{
+  "clip_model": "openai/clip-vit-base-patch32",
+  "rows": 5555,
+  "with_image": 4631,
+  "with_image_pct": 83.4,
+  "overall": [
+    {
+      "model": "LightGBM baseline (same listings)",
+      "mae_usd": 45.73,
+      "mdape_pct": 27.04,
+      "within_10_pct": 20.04,
+      "within_20_pct": 38.11,
+      "r2_log": 0.6594
+    },
+    {
+      "model": "Image only (CLIP + ridge)",
+      "mae_usd": 65.42,
+      "mdape_pct": 44.24,
+      "within_10_pct": 11.19,
+      "within_20_pct": 23.82,
+      "r2_log": 0.2671
+    }
+  ],
+  "verify": {
+    "clip_model": "openai/clip-vit-base-patch32",
+    "photos_tried": 41,
+    "photos_compared": 40,
+    "cosine_median": 0.9979,
+    "cosine_min": 0.9224,
+    "matches": true
+  }
+}

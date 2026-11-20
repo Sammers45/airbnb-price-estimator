@@ -1,0 +1,24 @@
+{
+  "rows": 5544,
+  "level": "80",
+  "mdape_full_pct": 26.96,
+  "mdape_form_pct": 30.43,
+  "before": {
+    "ranges": "before",
+    "coverage_80_pct": 67.69,
+    "coverage_hard_third": 75.88,
+    "median_width_pct": 94.3,
+    "review_pct": 7.5,
+    "auto_mdape_pct": 29.7,
+    "errors_over_50pct_caught": 11.1
+  },
+  "after": {
+    "ranges": "after",
+    "coverage_80_pct": 80.21,
+    "coverage_hard_third": 86.48,
+    "median_width_pct": 127.0,
+    "review_pct": 19.7,
+    "auto_mdape_pct": 28.27,
+    "errors_over_50pct_caught": 27.8
+  }
+}

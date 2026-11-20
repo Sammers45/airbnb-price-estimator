@@ -1,18 +1,18 @@
-"""Phase 3: LightGBM baseline on structured features, tracked in MLFlow.
+"""Phase 3: LightGBM baseline on structured features, tracked in MLflow.
 
 Usage:
     python -m src.baseline
 
 Every later model must beat this one. The script:
-    1. runs 5-fold cross-validation on the Phase 1 folds, predicting log(price);
-    2. compares it with a naive "market median" predictor;
-    3. saves one out-of-fold predictions per listing (used for paired tests in Phase 7);
-    4. trains a final model on all rows for the web app (phase 9);
-    5. logs params, metrics and artifacts to MLFlow and writes reports/baseline.md.
+  1. runs 5-fold cross-validation on the Phase 1 folds, predicting log(price);
+  2. compares it with a naive "market median" predictor;
+  3. saves one out-of-fold prediction per listing (used for paired tests in Phase 7);
+  4. trains a final model on all rows for the web app (Phase 9);
+  5. logs params, metrics and artifacts to MLflow and writes reports/baseline.md.
 
-Leakage rules: category codes, market centres and the outlier rule are fit on the training
-fold only; early stopping uses a slice of the training fold, never the validation fold.
-Text and image inputs are excluded.
+Leakage rules: category codes, market centres and the outlier rule are fit on the
+training fold only; early stopping uses a slice of the training fold, never the
+validation fold. Text and image inputs are excluded (they arrive in Phases 4-6).
 """
 
 from __future__ import annotations
@@ -28,13 +28,13 @@ import lightgbm as lgb
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-import polars as pl
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import polars as pl  # noqa: E402
 
-from src.data import md, outlier_bounds
-from src.metrics import metrics_by, price_metrics
-from src.utils import load_config, mlflow_run, set_seed, setup_logging
+from src.data import md, outlier_bounds  # noqa: E402
+from src.metrics import metrics_by, price_metrics  # noqa: E402
+from src.utils import load_config, mlflow_run, set_seed, setup_logging  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ CATEGORICAL = [
     "cancellation_policy",
     "neighbourhood",
 ]
-
+# Never model inputs: ids, the target in any form, and text/image inputs (later phases).
 EXCLUDED = {
     "listing_id",
     "country",
@@ -62,13 +62,19 @@ EXCLUDED = {
     "image_embeddings",
     "has_text_emb",
     "has_image_emb",
+    # Outputs of other models, joined in by Phases 6-7: never part of the TABLE features.
+    "base_log",
+    "text_pred_log",
+    "img_pred_log",
+    "has_image",
 }
+EXCLUDED_PREFIXES = ("img_", "w_")  # photo prompt scores, attention weights
 EARTH_RADIUS_KM = 6371.0
 
 
-# ------------------------------------------------------------- Features
+# --------------------------------------------------------------------------- features
 def haversine_km(lat: pl.Expr, lon: pl.Expr, lat0: pl.Expr, lon0: pl.Expr) -> pl.Expr:
-    """Great-circle distance in km between two points given in danger"""
+    """Great-circle distance in km between two points given in degrees."""
     la, lo, la0, lo0 = lat.radians(), lon.radians(), lat0.radians(), lon0.radians()
     a = ((la - la0) / 2).sin() ** 2 + la.cos() * la0.cos() * ((lo - lo0) / 2).sin() ** 2
     return 2 * EARTH_RADIUS_KM * a.sqrt().arcsin()
@@ -78,10 +84,10 @@ def haversine_km(lat: pl.Expr, lon: pl.Expr, lat0: pl.Expr, lon0: pl.Expr) -> pl
 class FeatureBuilder:
     """Turns a listings frame into a numeric matrix. Fit on training rows only.
 
-    Learned State:
-        categroies: the category values seen in training, per categorical column
-        centres:    median latitude/longitude per market, from training rows
-        numeric:    numeric input columns
+    Learned state (all JSON-serialisable, so the web app can rebuild features):
+      categories: the category values seen in training, per categorical column
+      centres:    median latitude/longitude per market, from training rows
+      numeric:    numeric input columns
     """
 
     categories: dict[str, list[str]] = field(default_factory=dict)
@@ -113,12 +119,15 @@ class FeatureBuilder:
         self.numeric = [
             c
             for c, t in df.schema.items()
-            if t.is_numeric() and c not in EXCLUDED and c not in CATEGORICAL
+            if t.is_numeric()
+            and c not in EXCLUDED
+            and c not in CATEGORICAL
+            and not c.startswith(EXCLUDED_PREFIXES)
         ]
         return self
 
     def transform(self, df: pl.DataFrame) -> pl.DataFrame:
-        """Feature frame in ``feature_name`` order. Unseen categories become null"""
+        """Feature frame in ``feature_names`` order. Unseen categories become null."""
         lat0 = pl.col("market").replace_strict(
             {m: c[0] for m, c in self.centres.items()}, default=None, return_dtype=pl.Float64
         )
@@ -134,8 +143,8 @@ class FeatureBuilder:
                 "dist_centre_km"
             )
         )
-        for c, value in self.categories.items():
-            codes = {v: float(i) for i, v in enumerate(value)}
+        for c, values in self.categories.items():
+            codes = {v: float(i) for i, v in enumerate(values)}
             exprs.append(
                 pl.col(c)
                 .cast(pl.String)
@@ -145,7 +154,7 @@ class FeatureBuilder:
         return df.select(exprs)
 
     def matrix(self, df: pl.DataFrame) -> np.ndarray:
-        """Float matrix (nulls -> NaN, whcih LightGBM treats as missing)"""
+        """Float matrix (nulls -> NaN, which LightGBM treats as missing)."""
         return self.transform(df).to_numpy().astype(np.float64)
 
     def to_dict(self) -> dict[str, Any]:
@@ -156,9 +165,9 @@ class FeatureBuilder:
         return cls(**d)
 
 
-## ---------------------------------------------------------------------- TRAINING
+# --------------------------------------------------------------------------- training
 def lgb_params(cfg: dict[str, Any]) -> dict[str, Any]:
-    """LightGBM params from config, plus fixed settings for reproducibility"""
+    """LightGBM params from config, plus fixed settings for reproducibility."""
     return {
         **cfg["baseline"]["params"],
         "seed": cfg["seed"],
@@ -197,14 +206,14 @@ def drop_outliers(train: pl.DataFrame, cfg: dict[str, Any]) -> pl.DataFrame:
 
 
 def naive_market_median(train: pl.DataFrame, valid: pl.DataFrame) -> np.ndarray:
-    """Predict each lsiting's training-market median price (global median if unseen)."""
+    """Predict each listing's training-market median price (global median if unseen)."""
     med = train.group_by("market").agg(pl.col("price").median().alias("naive"))
     out = valid.select("market").join(med, on="market", how="left")["naive"]
     return out.fill_null(float(train["price"].median())).to_numpy()
 
 
 def cross_validate(df: pl.DataFrame, cfg: dict[str, Any]) -> tuple[pl.DataFrame, dict[str, Any]]:
-    """Out-of-fold predictions ofr every listing, plus per-fold details."""
+    """Out-of-fold predictions for every listing, plus per-fold details."""
     folds = sorted(df["fold"].unique().to_list())
     parts, fold_rows, importances, best_iters = [], [], [], []
     for k in folds:
@@ -254,7 +263,7 @@ def cross_validate(df: pl.DataFrame, cfg: dict[str, Any]) -> tuple[pl.DataFrame,
 def train_final(
     df: pl.DataFrame, cfg: dict[str, Any], n_rounds: int
 ) -> tuple[lgb.Booster, FeatureBuilder]:
-    """MOdel on all rows for serving; number of trees = average best iteration from CV."""
+    """Model on all rows for serving; number of trees = average best iteration from CV."""
     train = drop_outliers(df, cfg)
     fb = FeatureBuilder().fit(train)
     data = lgb.Dataset(
@@ -266,7 +275,7 @@ def train_final(
     return lgb.train(lgb_params(cfg), data, num_boost_round=n_rounds), fb
 
 
-## ------------------------------------------------------------------------------- REPORT
+# --------------------------------------------------------------------------- report
 def plot_pred_vs_actual(oof: pl.DataFrame, path: Path) -> str:
     fig, ax = plt.subplots(figsize=(5.5, 5.5))
     ax.scatter(oof["price"], oof["pred"], s=4, alpha=0.3)
@@ -281,7 +290,7 @@ def plot_pred_vs_actual(oof: pl.DataFrame, path: Path) -> str:
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    fig.savefig(path, dpi=120)
+    fig.savefig(path, dpi=110)
     plt.close(fig)
     return f"figures/{path.name}"
 
@@ -289,7 +298,7 @@ def plot_pred_vs_actual(oof: pl.DataFrame, path: Path) -> str:
 def write_report(path: Path, s: dict[str, Any], t: dict[str, pl.DataFrame], fig: str) -> None:
     lines = [
         "# Baseline: LightGBM on structured features",
-        "_Generated by `python -m src.baseline`. Do not efit by hand._",
+        "_Generated by `python -m src.baseline`. Do not edit by hand._",
         f"\n{s['rows']} listings, {s['n_folds']}-fold CV on the Phase 1 folds, "
         f"target `log1p(price)`, {s['n_features']} features. "
         "Metrics are on out-of-fold predictions in USD.",
@@ -298,7 +307,7 @@ def write_report(path: Path, s: dict[str, Any], t: dict[str, pl.DataFrame], fig:
         f"\nMAE across folds: ${s['fold_mae_mean']} ± {s['fold_mae_std']} (mean ± std).",
         "\n## 2. Per fold",
         md(t["folds"]),
-        "\n## 3. Per Market",
+        "\n## 3. Per market",
         md(t["by_market"]),
         "\n## 4. Per room type",
         md(t["by_room"]),
@@ -312,7 +321,7 @@ def write_report(path: Path, s: dict[str, Any], t: dict[str, pl.DataFrame], fig:
 
 
 def run(cfg: dict[str, Any]) -> dict[str, Any]:
-    """Cross-validate, train the final model, save everything and log it to MLFlow."""
+    """Cross-validate, train the final model, save everything and log it to MLflow."""
     set_seed(cfg["seed"])
     paths = cfg["paths"]
     reports, preds_dir, models_dir = (
@@ -406,7 +415,7 @@ def run(cfg: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Phase 3 LightGBm baseline")
+    parser = argparse.ArgumentParser(description="Phase 3 LightGBM baseline")
     parser.add_argument("--config", default="config.yaml")
     args = parser.parse_args()
     setup_logging()

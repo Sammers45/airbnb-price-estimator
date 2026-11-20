@@ -109,3 +109,79 @@ text_model:
   dropout: 0.1
   inner_valid_frac: 0.1
   train_final: true
+
+image_model:
+  clip_model: openai/clip-vit-base-patch32
+  verify_photos: 40
+  verify_min_cosine: 0.95
+  probe_alphas: [0.1, 1, 10, 100, 1000]
+  prompts:
+    luxury: a photo of a luxurious, high-end home interior
+    modern: a photo of a modern, stylish apartment
+    view: a photo of a room with a sea or ocean view
+    pool: a photo of a swimming pool
+    garden: a photo of a garden or terrace
+    exterior: a photo of the outside of a house
+    bright: a photo of a bright, sunny room
+    cramped: a photo of a small, cramped room
+    basic: a photo of a plain, basic bedroom
+    dated: a photo of an old, dated interior
+    kitchen: a photo of a kitchen
+    bathroom: a photo of a bathroom
+
+fusion:
+  hidden: 64
+  heads: 4
+  dropout: 0.2
+  modality_dropout: 0.1
+  residual_on_baseline: true
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  batch_size: 128
+  max_epochs: 200
+  patience: 15
+  inner_valid_frac: 0.1
+  seeds: 3
+  train_final: true
+
+evaluate: # Phase 7: runs on a normal CPU
+  pca_components: 8 # principal components of the text / photo vectors (fit per training fold)
+  bootstrap: 2000 # paired bootstrap resamples
+  alpha: 0.05 # significance level after Holm correction
+
+intervals:               # Phase 8a: price ranges + human review, runs on a CPU
+  coverage_levels: [0.8, 0.9]  # promised share of true prices inside the ranges; the first drives routing
+  calib_frac: 0.4  # share of the training folds used to size the ranges
+  review_rate: 0.2  # aim to send about this share of listings to a person
+  min_market_rows: 30  # markets with fewer listings always go to review
+  difficulty:       # LightGBM predicting how wrong the price model will be 
+    num_boost_round: 300
+    learning_rate: 0.03
+    num_leaves: 15
+    min_data_in_leaf: 40
+
+explain:                # Phase 8b: explanation, runs on a CPU
+  shap_top: 15          # features shown in the SHAP chart
+  examples: 3           # listings explained one by one in the report
+  ig_rows: 500          # listings explained with Integrated Gradients (fusion neetwork)
+  ig_steps: 32          # integration steps
+serve:                # Phase 9: price API + web design
+  model: fusion       # fusion (Phase 7 best) or baseline; falls back to baseline if fusion files are missing
+  use_text_model: true  # embed the description with the Phase 4 model, if models/text_model exists
+  use_photo: true     # embed uploaded photos with CLIP 
+  min_market_rows: 30  # markets offered on the form
+  log_dir: data/monitoring  # requests.jsonl, feedback.jsonl, errors.jsonl
+  host: 127.0.0.1
+  port: 8000
+
+monitor:                          # Phase 9: monitoring
+  features: [accommodates, bedrooms, bathrooms]  # numeric inputs checked fo drift
+  categories: [market, room_type] # categroical inputs checked for drift
+  psi_moderate: 0.1               
+  psi_major: 0.2
+  review_rate_tolerance: 10       # alert if the review rate moves more than this many points
+  min_feedback: 30                # real prices needed before checking range covering
+  coverage_alert_below: 75        # % of real prices inside the 80% range.
+  min_requests: 50                # drift is only checked once this many requests are logged
+  latency_p95_ms: 2000
+  max_error_pct: 1

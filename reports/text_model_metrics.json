@@ -1,0 +1,37 @@
+{
+  "model_name": "distilbert-base-multilingual-cased",
+  "max_length": 256,
+  "epochs": 3,
+  "rows": 5555,
+  "final_epochs": 3,
+  "overall": [
+    {
+      "model": "LightGBM baseline",
+      "mae_usd": 45.86,
+      "mdape_pct": 26.98,
+      "within_10_pct": 19.87,
+      "within_20_pct": 38.27,
+      "r2_log": 0.6756
+    },
+    {
+      "model": "Text (DistilBERT)",
+      "mae_usd": 58.71,
+      "mdape_pct": 36.25,
+      "within_10_pct": 14.82,
+      "within_20_pct": 29.2,
+      "r2_log": 0.4592
+    }
+  ],
+  "text_vector_dim": 768,
+  "params": {
+    "model_name": "distilbert-base-multilingual-cased",
+    "max_length": 256,
+    "batch_size": 32,
+    "epochs": 3,
+    "learning_rate": 3e-05,
+    "weight_decay": 0.01,
+    "warmup_frac": 0.1,
+    "dropout": 0.1,
+    "inner_valid_frac": 0.1
+  }
+}

@@ -94,6 +94,7 @@ def predict(
     """Standardised predictions and text vectors for ``rows`` (in the order of ``rows``)."""
     t = cfg["text_model"]
     dev = device()
+    model.to(dev)
     model.eval()
     order = rows[np.argsort([len(ids[i]) for i in rows])]  # similar lengths -> less padding
     preds, vecs = {}, {}

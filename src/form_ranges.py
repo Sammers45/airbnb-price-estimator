@@ -1,0 +1,207 @@
+"""Phase 10: honest price ranges for NEW listings described only through the web form
+
+Usage:
+    python -m src.form_ranges
+
+Phase 9 monitoring found training-serving skew. The web form asks about ten fields and
+fills the rest (review scores, host details, ...) with the market's typical value. Prices
+predicted that way are less accurate, but the Phase 8 ranges sized for predictions made
+with the full listing data, so they were too narrow, and the difficulty model, seeing
+'typical' inputs, sent almost nothing to review.
+
+Fix: measure the errors the service really makes on form-only input, out of fold, and size the
+ranges, and the review rule on THOSE errors. FOr each fold k:
+    1. train the LigthGBM baseline on the other folds;
+    2. rebuild each fold-k listing exactly as the web form sends it (serve.listing_row), with
+       typical values taken from the other folds only;
+    3. predict -> out-of-fold form-only predictions.
+Phase 8's calibrator is then fit on these predictions and saved to models/intervals_form/
+which the service uses for every web request.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import polars as pl
+
+from src import intervals as iv
+from src.baseline import FeatureBuilder, drop_outliers, fit_booster
+from src.data import md
+from src.metrics import price_metrics
+from src.serve import build_form, listing_from_row, listing_row
+from src.utils import load_config, mlflow_run, set_seed, setup_logging
+
+log = logging.getLogger(__name__)
+KEEP = ["listing_id", "fold", "price", "log_price"]
+
+
+def form_rows(listings: pl.DataFrame, form: dict[str, Any]) -> pl.DataFrame:
+    """Each listing as the web form send it. Markets not on the form are left out."""
+    rows = []
+    for r in listings.iter_rows(named=True):
+        if r["market"] in form["markets"]:
+            row = listing_row(form, listing_from_row(r, form))
+            rows.append(row | {k: r[k] for k in KEEP})
+    return pl.DataFrame(rows, infer_schema_length=None)
+
+
+def cross_validate_form(df: pl.DataFrame, cfg: dict[str, Any]) -> pl.DataFrame:
+    """Out-of-fold LightGBM predictions from form-only input (and, to compare, full data)."""
+    parts = []
+    for k in sorted(df["fold"].unique().to_list()):
+        train = df.filter(pl.col("fold") != k)
+        form = build_form(cfg, train)
+        fit = drop_outliers(train, cfg)
+        fb = FeatureBuilder().fit(fit)
+        booster = fit_booster(fb.matrix(fit), fit["log_price"].to_numpy(), fb, cfg, cfg["seed"] + k)
+        real = df.filter(pl.col("fold") == k)
+        best = booster.best_iteration
+        full = real.select("listing_id").with_columns(
+            pl.Series("pred_full", np.expm1(booster.predict(fb.matrix(real), num_iteration=best)))
+        )
+        valid = form_rows(real, form)
+        pred_log = booster.predict(fb.matrix(valid), num_iteration=best)
+        parts.append(
+            valid.with_columns(pl.Series("pred_log", pred_log)).join(full, on="listing_id")
+        )
+        log.info("fold %d: %d listings rebuilt from the form", k, valid.height)
+    out = pl.concat(parts, how="diagonal_relaxed")
+    return out.with_columns(
+        pl.col("pred_log").exp().sub(1).alias("pred"),
+        (pl.col("log_price") - pl.col("pred_log")).alias("resid"),
+    )
+
+
+def before_fix(full: pl.DataFrame, form: pl.DataFrame, cfg: dict[str, Any]) -> pl.DataFrame:
+    """What Phase 9 did: ranges sized on full-data errors, applied to form-only predictions."""
+    parts = []
+    for k in sorted(form["fold"].unique().to_list()):
+        cb = iv.calibrate(full.filter(pl.col("fold") != k), cfg, cfg["seed"] + int(k))
+        parts.append(cb.apply(form.filter(pl.col("fold") == k)))
+    cols = ["listing_id", "fold", "market", "room_type", "price", "pred"]
+    return form.select(cols).join(pl.concat(parts), on="listing_id")
+
+
+def summary_row(name: str, oof: pl.DataFrame, k: str) -> dict[str, Any]:
+    cov = iv.coverage_table(oof, [int(k) / 100]).filter(pl.col("method") == "adaptive")
+    cov = cov.row(0, named=True)
+    review = oof["review"].to_numpy()
+    y, p = oof["price"].to_numpy(), oof["pred"].to_numpy()
+    big = np.abs(p - y) / y > 0.5
+    auto = price_metrics(y[~review], p[~review]) if (~review).any() else {"mdape_pct": None}
+    return {
+        "ranges": name,
+        f"coverage_{k}_pct": cov["coverage_pct"],
+        "coverage_hard_third": cov["coverage_hard_third"],
+        "median_width_pct": cov["median_width_pct"],
+        "review_pct": round(100 * float(review.mean()), 1),
+        "auto_mdape_pct": auto["mdape_pct"],
+        "errors_over_50pct_caught": round(100 * float((big & review).sum() / max(big.sum(), 1)), 1),
+    }
+
+
+def write_report(path: Path, s: dict[str, Any], t: dict[str, pl.DataFrame]) -> None:
+    k = s["level"]
+    lines = [
+        "# Price ranges for new listings (form-only inputs)",
+        "_Generated by `python -m src.form_ranges`. Do not edit by hand._",
+        "",
+        f"{s['rows']} listings revuilt exactly as the web form sends them; fields not on the "
+        "form take the typical value of the market in the OTHER folds. Out-of-fold throughout.",
+        "",
+        "## 1. Accuracy: full listing data vs form only (LightGBM baseline)",
+        md(t["accuracy"]),
+        "",
+        f"## 2. {k}% ranges: before and after the fix",
+        md(t["ranges"]),
+        "",
+        "## 3. After teh fix, by market",
+        md(t["by_market"]),
+        "",
+        "## 4. Notes",
+        "- The ranges are sized on the LigthGBM baseline's form-only errors. The service's fusion "
+        "model adds a small correction to that price (about 6% on average, Phase 8), so the "
+        "monitoring coverage check confirms they hold in use.",
+        "- Listings in markets that are not on the form are always sent to review; they are "
+        "left out there.",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def run(cfg: dict[str, Any]) -> dict[str, Any]:
+    set_seed(cfg["seed"])
+    paths = cfg["paths"]
+    reports, preds = Path(paths["reports"]), Path(paths["predictions"])
+    reports.mkdir(parents=True, exist_ok=True)
+    df = pl.read_parquet(paths["processed"]).with_columns(pl.col("market").fill_null(""))
+    form = cross_validate_form(df, cfg)
+    k = f"{round(cfg['intervals']['coverage_levels'][0] * 100)}"
+
+    cal = form.drop("pred_full")  # never a feature of the difficulty model
+    after = iv.cross_validate(cal, cfg)
+    full = iv.load_inputs(cfg)
+    before = before_fix(full, cal, cfg)
+
+    y = form["price"].to_numpy()
+    acc = [
+        {"input": "full listing data", **price_metrics(y, form["pred_full"].to_numpy())},
+        {"input": "form only", **price_metrics(y, form["pred"].to_numpy())},
+    ]
+    tables = {
+        "accuracy": pl.DataFrame(acc),
+        "ranges": pl.DataFrame([summary_row("before", before, k), summary_row("after", after, k)]),
+        "by_market": iv.by_market(after, k),
+    }
+    iv.calibrate(cal, cfg, cfg["seed"]).save(
+        Path(paths["models"]) / "intervals_form", "LightGBM, form-only input"
+    )
+    after.write_parquet(preds / "intervals_form_oof.parquet")
+
+    r = {row["ranges"]: row for row in tables["ranges"].to_dicts()}
+    s = {
+        "rows": form.height,
+        "level": k,
+        "mdape_full_pct": acc[0]["mdape_pct"],
+        "mdape_form_pct": acc[1]["mdape_pct"],
+        "before": r["before"],
+        "after": r["after"],
+    }
+    with pl.Config(tbl_width_chars=1000, fmt_str_lengths=200):
+        write_report(reports / "form_ranges.md", s, tables)
+    (reports / "form_ranges_metrics.json").write_text(json.dumps(s, indent=2), encoding="utf-8")
+
+    with mlflow_run(cfg, "form_ranges") as mlflow:
+        if mlflow is not None:
+            mlflow.log_metric("mdape_form_pct", s["mdape_form_pct"])
+            for name in ("before", "after"):
+                mlflow.log_metric(f"coverage_{name}", r[name][f"coverage_{k}_pct"])
+                mlflow.log_metric(f"review_pct_{name}", r[name]["review_pct"])
+            mlflow.log_artifact(str(reports / "form_ranges.md"))
+
+    print(f"MDAPE: full data {s['mdape_full_pct']}%, form only {s['mdape_form_pct']}%")
+    for name in ("before", "after"):
+        x = r[name]
+        print(
+            f"{name:<6} {k}% coverage {x[f'coverage_{k}_pct']}%, review {x['review_pct']}%, "
+            f"auto-priced MdAPE {x['auto_mdape_pct']}%"
+        )
+    print(f"Reports: {reports / 'form_ranges.md'}")
+    return s
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Phase 10: ranges for form-only input")
+    parser.add_argument("--config", default="config.yaml")
+    args = parser.parse_args()
+    setup_logging()
+    run(load_config(args.config))
+
+
+if __name__ == "__main__":
+    main()

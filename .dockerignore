@@ -1,0 +1,20 @@
+# Only config.yaml, src/, web/ and models/ go into the image
+data/
+reports/
+notebooks/
+tests/
+docs/
+mlruns/
+mlflow.db
+.git/
+.github/
+Lib/
+Scripts/
+Include/
+share/
+pyvenv.cfg
+.venv/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.zip
